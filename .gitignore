@@ -1,7 +1,6 @@
 # build output and packaging artifacts
 dist/
 build/
-KeySync.spec
 
 # model weights
 models/

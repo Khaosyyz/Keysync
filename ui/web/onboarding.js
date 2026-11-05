@@ -9,6 +9,8 @@ const ATTACK = 0.6;
 const RELEASE = 0.15;
 const MENU_GAP = 6;
 const MENU_MAX_HEIGHT = 280;
+const CELEBRATION = { particleCount: 200, spread: 360, origin: { x: 0.5, y: 0.45 }, disableForReducedMotion: true };
+const CELEBRATION_HOLD_MS = 250;
 const STATUS = { missing: "spin", checking: "spin", failed: "fail", downloading: "ok", ready: "ok" };
 
 /* First-run shell. Step "setup" runs the level meter and, when the models are
@@ -156,11 +158,25 @@ export function initOnboarding({ py, cfg, save, onFinish }) {
     closeMenu();
     setMetering(false);
     Object.assign(cfg, await py.complete_onboarding());
-    onFinish();
   }
 
-  $("ob-skip").addEventListener("click", finish);
-  $("ob-next").addEventListener("click", () => (step < STEPS.length - 1 ? go(step + 1) : finish()));
+  /* "Get started" scatters confetti across the window, then the shell dissolves into the app. */
+  async function celebrate() {
+    const button = $("ob-next");
+    button.disabled = true;
+    await finish();
+    confetti(CELEBRATION);
+    setTimeout(() => {
+      const shell = document.querySelector(".onboarding");
+      shell.classList.add("leaving");
+      const settle = (e) => e.target === shell && shell.classList.remove("leaving");
+      shell.addEventListener("animationend", settle);
+      onFinish();
+    }, CELEBRATION_HOLD_MS);
+  }
+
+  $("ob-skip").addEventListener("click", () => finish().then(onFinish));
+  $("ob-next").addEventListener("click", () => (step < STEPS.length - 1 ? go(step + 1) : celebrate()));
 
   /* Rebuilds every string this shell owns from the current language and cfg. */
   function render() {

@@ -6,6 +6,7 @@
   <link rel="stylesheet" href="base.css">
   <link rel="stylesheet" href="app.css">
   <link rel="stylesheet" href="onboarding.css">
+  <script src="vendor/confetti.browser.min.js"></script>
   <script type="module" src="errors.js"></script>
   <script type="module" src="app.js"></script>
 </head>
@@ -49,9 +50,9 @@
             <span data-i18n="ob.model.failed"></span>
             <button class="btn btn-outline" id="ob-model-retry" data-i18n="ob.model.retry"></button>
           </p>
-          <div class="ob-model-progress" id="ob-model-progress" hidden>
-            <div class="ob-model-caption"><span id="ob-model-note"></span><span class="pct" id="ob-model-pct"></span></div>
-            <div class="ob-model-bar"><i id="ob-model-bar"></i></div>
+          <div class="progress" id="ob-model-progress" hidden>
+            <div class="progress-caption"><span id="ob-model-note"></span><span class="pct" id="ob-model-pct"></span></div>
+            <div class="progress-track"><i id="ob-model-bar"></i></div>
           </div>
         </div>
       </div>

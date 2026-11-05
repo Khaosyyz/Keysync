@@ -11,12 +11,19 @@ Decides whether the focused UI element can accept text:
            not a page body you merely clicked on)
   anything else / disabled
         -> not input-capable
+
+Chromium-based apps (our own WebView2 included) build their accessibility tree
+only once a UIA client asks, so the first answer can be their bare root pane.
+A negative answer is therefore read again after a short settle.
 """
 import ctypes
+import time
 
 import comtypes.client
 comtypes.client.GetModule("UIAutomationCore.dll")
 import comtypes.gen.UIAutomationClient as uia
+
+from core.config import settings
 
 CT_EDIT = uia.UIA_EditControlTypeId
 CT_DOCUMENT = uia.UIA_DocumentControlTypeId
@@ -47,6 +54,13 @@ class FocusProbe:
             "{ff48dba4-60ef-4201-aa87-54103eef594e}", interface=uia.IUIAutomation)
 
     def probe(self) -> ProbeResult:
+        result = self._read()
+        if not result.can_input:
+            time.sleep(float(settings.get("output.probe_settle_ms")) / 1000)
+            result = self._read()
+        return result
+
+    def _read(self) -> ProbeResult:
         try:
             element = self._uia.GetFocusedElement()
         except Exception as exc:

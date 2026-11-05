@@ -1,4 +1,4 @@
-import { api, applyTheme, errorCode, h, icon, isDark, onSystemScheme, percent, segmented, THEMES, trackFocusMode, watchModel } from "./shared.js";
+import { api, applyTheme, captionRgb, errorCode, h, icon, isDark, onSystemScheme, percent, segmented, THEMES, trackFocusMode, watchModel } from "./shared.js";
 import { initOnboarding } from "./onboarding.js";
 import { formatDuration, keyLabel, LANGUAGES, locale, setLanguage, t, tNodes, translateStatic } from "./i18n.js";
 
@@ -89,8 +89,7 @@ function fadeTheme() {
 /* The title bar takes the colour of whichever shell is showing, read from an
    untransitioned probe so it is the destination colour, never a mid-fade one. */
 function syncChrome() {
-  const rgb = getComputedStyle($(".caption-probe")).backgroundColor.match(/\d+/g).slice(0, 3).map(Number);
-  py.set_chrome(rgb, isDark());
+  py.set_chrome(captionRgb(), isDark());
 }
 
 function renderText() {

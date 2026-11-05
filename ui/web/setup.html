@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <title>KeySync Setup</title>
+  <link rel="stylesheet" href="base.css">
+  <link rel="stylesheet" href="setup.css">
+  <script type="module" src="setup.js"></script>
+</head>
+<body>
+  <div class="caption-probe" aria-hidden="true"></div>
+
+  <main class="setup">
+    <header class="brand">
+      <img class="logo" src="logo.svg" alt="">
+      <h1>KeySync</h1>
+      <p data-i18n="setup.tagline"></p>
+    </header>
+
+    <section class="panel">
+      <div class="view" data-view="idle">
+        <label class="label" for="path" data-i18n="setup.location"></label>
+        <div class="field">
+          <input id="path" spellcheck="false" autocomplete="off">
+          <button class="btn btn-outline" id="browse" data-i18n="setup.browse"></button>
+        </div>
+        <p class="error" id="error" hidden></p>
+        <button class="btn btn-primary wide" id="install" data-i18n="setup.install"></button>
+      </div>
+
+      <div class="view" data-view="installing" hidden>
+        <div class="progress" id="progress">
+          <div class="progress-caption"><span data-i18n="setup.installing"></span><span class="pct" id="pct"></span></div>
+          <div class="progress-track"><i id="bar"></i></div>
+        </div>
+      </div>
+
+      <div class="view" data-view="done" hidden>
+        <div class="done">
+          <span class="status ok"></span>
+          <div>
+            <h2 data-i18n="setup.done"></h2>
+            <p data-i18n="setup.doneHint"></p>
+          </div>
+        </div>
+        <button class="btn btn-primary wide" id="open" data-i18n="setup.open"></button>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

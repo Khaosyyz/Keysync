@@ -18,6 +18,10 @@ export const isDark = () => {
 
 export const onSystemScheme = (fn) => darkQuery.addEventListener("change", fn);
 
+/* The colour the title bar should take, read from the untransitioned .caption-probe. */
+export const captionRgb = () =>
+  getComputedStyle(document.querySelector(".caption-probe")).backgroundColor.match(/\d+/g).slice(0, 3).map(Number);
+
 export function trackFocusMode() {
   const root = document.documentElement;
   addEventListener("keydown", (e) => e.key === "Tab" && (root.dataset.keyboard = ""), true);

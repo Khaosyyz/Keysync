@@ -67,6 +67,7 @@ DEFAULT_CONFIG = {
     },
     "output": {
         "char_delay_ms": 0,
+        "probe_settle_ms": 150,
     },
     "history": {
         "dir": "data",
