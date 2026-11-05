@@ -117,6 +117,7 @@ body[data-mode="app"] .onboarding { display: none; }
 .ob-meter {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 5px;
   height: 104px;
   margin-top: 28px;
