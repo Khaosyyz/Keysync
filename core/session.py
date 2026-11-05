@@ -24,20 +24,20 @@ from core.engine import Engine
 from core.history_store import save_record
 from core.meter import level_of
 from core.logger import error, info, warn
-from core.microphone import Microphone
 from core.output_probe import FocusProbe
 from core.output_sink import inject_text
 
 
 class Session:
-    def __init__(self, emit, models):
+    def __init__(self, emit, models, mic):
         self._emit = emit
         self._models = models
+        self._mic = mic
         self._probe = FocusProbe()
         self._toggle_lock = threading.Lock()
-        self._mic = None
         self._engine = None
         self._active = False
+        self._aborted = False
         self._probe_result = None
         self._pcm = []
 
@@ -46,6 +46,7 @@ class Session:
         self._feeder_done = threading.Event()
 
     def shutdown(self):
+        self._mic.close()
         if self._engine is not None:
             self._engine.shutdown()
 
@@ -71,6 +72,7 @@ class Session:
             self._emit("model_missing", {"model": self._models.snapshot()})
             return
         self._active = True
+        self._aborted = False
         self._probe_result = None
         self._pcm = []
         self._engine = None
@@ -81,19 +83,20 @@ class Session:
         threading.Thread(target=self._probe_async, daemon=True).start()
         threading.Thread(target=self._boot_engine, daemon=True).start()
 
-        self._mic = Microphone()
-        try:
-            self._mic.open()
-        except Exception as exc:
-            error(f"microphone open failed: {type(exc).__name__}: {exc}")
+        self._mic.on_block = self._on_block
+        pre = self._mic.activate()
+        if pre is None:
+            self._aborted = True
             self._active = False
-            self._audio_q.put(None)
             self._emit("error", {"code": "microphone"})
             return
 
-        threading.Thread(target=self._capture_loop, daemon=True).start()
+        now = time.perf_counter()
+        step = float(settings.get("audio.block_frames")) / float(settings.get("audio.sample_rate"))
+        for i, block in enumerate(pre):
+            self._keep((now - (len(pre) - i) * step, block))
         self._emit("recording", {})
-        info("session started (capturing)")
+        info(f"session started, {len(pre) * step:.2f}s pre-roll")
 
     def _probe_async(self):
         try:
@@ -111,6 +114,9 @@ class Session:
                 error("engine failed to become ready")
                 engine.shutdown()
                 return
+            if self._aborted:
+                engine.shutdown()
+                return
             info(f"engine ready in {time.perf_counter() - t0:.2f}s")
             self._engine = engine
             threading.Thread(target=self._feed_loop, args=(engine,), daemon=True).start()
@@ -119,18 +125,13 @@ class Session:
         finally:
             self._boot_done.set()
 
-    def _capture_loop(self):
-        while self._active:
-            try:
-                block = self._mic.read_block()
-            except Exception as exc:
-                error(f"microphone read failed: {type(exc).__name__}: {exc}")
-                return
-            if block is None:
-                return
-            self._pcm.append(block)
-            self._audio_q.put((time.perf_counter(), block))
-            self._emit("level", {"value": level_of(block)})
+    def _on_block(self, block: bytes):
+        self._keep((time.perf_counter(), block))
+
+    def _keep(self, item: tuple[float, bytes]):
+        self._pcm.append(item[1])
+        self._audio_q.put(item)
+        self._emit("level", {"value": level_of(item[1])})
 
     def _feed_loop(self, engine):
         """Drain the queue in order, paced against the capture timestamps."""
@@ -152,8 +153,7 @@ class Session:
 
     def _end(self):
         self._active = False
-        if self._mic is not None:
-            self._mic.close()
+        self._mic.standby()
         info("capture stopped")
         self._emit("transcribing", {})
 

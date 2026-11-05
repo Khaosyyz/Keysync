@@ -19,12 +19,15 @@ def main():
         return 1
 
     from core.hotkey import HotkeyWatcher
+    from core.microphone import Microphone
     from core.session import Session
     from ui.app import Shell
 
     watcher = HotkeyWatcher(lambda: threading.Thread(target=session.toggle, daemon=True).start())
     shell = Shell(watcher)
-    session = Session(shell.emit, shell.models)
+    mic = Microphone()
+    mic.prime()
+    session = Session(shell.emit, shell.models, mic)
     threading.Thread(target=watcher.run, daemon=True).start()
 
     info("KeySync ready")

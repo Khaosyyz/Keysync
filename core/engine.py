@@ -10,9 +10,14 @@ stdin: raw 16 kHz mono s16le PCM.
 
 Offline mode (-a file.wav) prints the full transcript on stdout.
 """
+import os
 import subprocess
+import tempfile
 import threading
+import wave
 from pathlib import Path
+
+import soundfile as sf
 
 from core.config import settings
 from core.hotwords import render_for_engine
@@ -34,15 +39,28 @@ def _command(*mode) -> list[str]:
     ]
 
 
-def transcribe_file(wav: Path) -> str:
-    cmd = _command("-a", str(wav))
-    info(f"engine offline: {wav.name}")
-    result = subprocess.run(
-        cmd, capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW,
-        timeout=float(settings.get("engine.transcribe_timeout_s")))
-    if result.returncode != 0:
-        raise RuntimeError(f"engine exited with code {result.returncode}")
-    return result.stdout.decode("utf-8", errors="replace").strip()
+def transcribe_file(audio: Path) -> str:
+    """Offline transcription of a stored recording; the engine reads WAV only,
+    so anything else is decoded to a temp WAV first."""
+    data, rate = sf.read(str(audio), dtype="int16")
+    fd, wav = tempfile.mkstemp(suffix=".wav")
+    os.close(fd)
+    try:
+        with wave.open(wav, "wb") as out:
+            out.setnchannels(1 if data.ndim == 1 else data.shape[1])
+            out.setsampwidth(2)
+            out.setframerate(rate)
+            out.writeframes(data.tobytes())
+        cmd = _command("-a", wav)
+        info(f"engine offline: {audio.name}")
+        result = subprocess.run(
+            cmd, capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW,
+            timeout=float(settings.get("engine.transcribe_timeout_s")))
+        if result.returncode != 0:
+            raise RuntimeError(f"engine exited with code {result.returncode}")
+        return result.stdout.decode("utf-8", errors="replace").strip()
+    finally:
+        os.unlink(wav)
 
 
 class Engine:

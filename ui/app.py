@@ -12,8 +12,9 @@ import ctypes
 import json
 import queue
 import threading
-import winsound
 
+import sounddevice as sd
+import soundfile as sf
 import webview
 import win32api
 import win32con
@@ -176,10 +177,11 @@ class MainApi:
         copy_text(text)
 
     def play(self, entry_id: str):
-        winsound.PlaySound(str(audio_path(entry_id)), winsound.SND_FILENAME | winsound.SND_ASYNC)
+        data, rate = sf.read(str(audio_path(entry_id)), dtype="float32")
+        sd.play(data, rate)
 
     def stop(self):
-        winsound.PlaySound(None, winsound.SND_PURGE)
+        sd.stop()
 
     def retranscribe(self, entry_id: str):
         record = update_text(entry_id, transcribe_file(audio_path(entry_id)))

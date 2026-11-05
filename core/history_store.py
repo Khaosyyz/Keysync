@@ -1,16 +1,19 @@
-"""Transcription history: one WAV + one JSON per session, grouped by day.
+"""Transcription history: one OGG + one JSON per session, grouped by day.
 
-  data/20261105/20261105-143025123.wav
+  data/20261105/20261105-143025123.ogg
   data/20261105/20261105-143025123.json   {id, timestamp, text, duration_s, delivery}
 
+Recordings from before the OGG switch (.wav) stay playable until they age out.
 Day folders older than history.retention_days are purged on load.
 """
 import json
 import re
 import shutil
-import wave
 from datetime import datetime, timedelta
 from pathlib import Path
+
+import numpy as np
+import soundfile as sf
 
 from core.config import settings
 
@@ -25,7 +28,7 @@ def _paths(entry_id: str) -> tuple[Path, Path]:
     if not _ID.match(entry_id):
         raise ValueError(f"invalid history id: {entry_id!r}")
     day = _root() / entry_id[:8]
-    return day / f"{entry_id}.json", day / f"{entry_id}.wav"
+    return day / f"{entry_id}.json", day / f"{entry_id}.ogg"
 
 
 def _write_meta(path: Path, meta: dict):
@@ -35,16 +38,13 @@ def _write_meta(path: Path, meta: dict):
 def save_record(pcm: bytes, text: str, delivery: str) -> dict:
     now = datetime.now()
     entry_id = now.strftime("%Y%m%d-%H%M%S") + f"{now.microsecond // 1000:03d}"
-    meta_path, wav_path = _paths(entry_id)
+    meta_path, audio = _paths(entry_id)
     meta_path.parent.mkdir(parents=True, exist_ok=True)
 
     rate = int(settings.get("audio.sample_rate"))
     channels = int(settings.get("audio.channels"))
-    with wave.open(str(wav_path), "wb") as w:
-        w.setnchannels(channels)
-        w.setsampwidth(2)
-        w.setframerate(rate)
-        w.writeframes(pcm)
+    samples = np.frombuffer(pcm, dtype=np.int16).reshape(-1, channels)
+    sf.write(str(audio), samples, rate)
 
     meta = {
         "id": entry_id,
@@ -79,7 +79,8 @@ def load_history() -> list[dict]:
 
 
 def audio_path(entry_id: str) -> Path:
-    return _paths(entry_id)[1]
+    audio = _paths(entry_id)[1]
+    return audio if audio.exists() else audio.with_suffix(".wav")
 
 
 def update_text(entry_id: str, text: str) -> dict:
@@ -91,9 +92,10 @@ def update_text(entry_id: str, text: str) -> dict:
 
 
 def delete_record(entry_id: str):
-    meta_path, wav_path = _paths(entry_id)
+    meta_path, audio = _paths(entry_id)
     meta_path.unlink(missing_ok=True)
-    wav_path.unlink(missing_ok=True)
+    audio.unlink(missing_ok=True)
+    audio.with_suffix(".wav").unlink(missing_ok=True)
     day = meta_path.parent
     if day.exists() and not any(day.iterdir()):
         day.rmdir()

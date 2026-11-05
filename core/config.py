@@ -31,6 +31,7 @@ DEFAULT_CONFIG = {
         "block_frames": 800,
         "channels": 1,
         "meter_floor_db": -60,
+        "pre_roll_s": 1.0,
     },
     "engine": {
         "exe": "engine/llama-funasr-cli.exe",
