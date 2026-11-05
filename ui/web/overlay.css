@@ -63,6 +63,7 @@ html, body { overflow: hidden; background: transparent; }
   overflow-wrap: anywhere;
 }
 
+.card-head + .card-foot { margin-top: 12px; }
 .card-foot { display: flex; align-items: center; justify-content: space-between; color: #9a9aa2; font-size: 12px; }
 .card .btn-primary.done, .card .btn-primary.done:hover { background: #2ea367; color: #ffffff; }
 

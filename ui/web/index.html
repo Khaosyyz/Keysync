@@ -40,6 +40,20 @@
         </div>
         <div class="ob-meter" id="ob-meter"></div>
         <p class="ob-error" id="ob-error" hidden></p>
+        <div class="ob-model" id="ob-model" hidden>
+          <div class="ob-model-row">
+            <h3 data-i18n="ob.model.check"></h3>
+            <span class="status" id="ob-model-status"></span>
+          </div>
+          <p class="ob-model-failed" id="ob-model-failed" hidden>
+            <span data-i18n="ob.model.failed"></span>
+            <button class="btn btn-outline" id="ob-model-retry" data-i18n="ob.model.retry"></button>
+          </p>
+          <div class="ob-model-progress" id="ob-model-progress" hidden>
+            <div class="ob-model-caption"><span id="ob-model-note"></span><span class="pct" id="ob-model-pct"></span></div>
+            <div class="ob-model-bar"><i id="ob-model-bar"></i></div>
+          </div>
+        </div>
       </div>
 
       <div class="ob-page ob-try" data-step="try" hidden>
@@ -56,7 +70,11 @@
   <nav class="rail">
     <button class="rail-btn" data-page="history"><span class="icon i-history" style="--size:18px"></span><span data-i18n="nav.history"></span></button>
     <button class="rail-btn" data-page="vocab"><span class="icon i-vocab" style="--size:18px"></span><span data-i18n="nav.vocab"></span></button>
-    <button class="rail-btn bottom" data-page="settings"><span class="icon i-settings" style="--size:18px"></span><span data-i18n="nav.settings"></span></button>
+    <div class="model" id="model">
+      <span class="model-name" id="model-name"></span>
+      <button class="model-action" id="model-action"><i class="ring"></i><span class="model-pct"></span><span class="icon model-glyph"></span></button>
+    </div>
+    <button class="rail-btn" data-page="settings"><span class="icon i-settings" style="--size:18px"></span><span data-i18n="nav.settings"></span></button>
   </nav>
 
   <main class="panel">

@@ -26,6 +26,7 @@ from core.hotwords import add_hotword, load_hotwords, remove_hotword, update_hot
 from core.logger import error, info
 from core.meter import Meter
 from core.microphone import default_input_name, list_input_names
+from core.models import ModelDownload
 from core.output_sink import copy_text
 
 WEB_DIR = RESOURCE_DIR / "ui" / "web"
@@ -43,6 +44,10 @@ _user32.SetWindowLongPtrW.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_ss
 _user32.SetWindowPos.argtypes = [ctypes.c_void_p, ctypes.c_void_p] + [ctypes.c_int] * 4 + [ctypes.c_uint]
 _user32.ShowWindow.argtypes = [ctypes.c_void_p, ctypes.c_int]
 HWND_TOPMOST = ctypes.c_void_p(-1)
+
+METER_EVENTS = {"level", "meter_error"}
+MAIN_EVENTS = {"result", "model"}
+OVERLAY_EVENTS = {"recording", "level", "transcribing", "result", "error", "model_missing", "config"}
 
 _dwm_set_attribute = ctypes.windll.dwmapi.DwmSetWindowAttribute
 _dwm_set_attribute.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_void_p, ctypes.c_uint]
@@ -151,6 +156,7 @@ class MainApi:
             "hotword_max_length": settings.get("engine.hotword_max_length"),
             "history": load_history(),
             "hotwords": load_hotwords(),
+            "model": self._shell.models.snapshot(),
         }
 
     def log_error(self, message: str):
@@ -192,6 +198,9 @@ class MainApi:
         settings.set("onboarding.completed", True)
         info("onboarding completed")
         return {"onboarded": True}
+
+    def download_models(self):
+        return self._shell.models.start()
 
     def meter_start(self):
         self._shell._metering = True
@@ -252,6 +261,9 @@ class OverlayApi:
     def hide(self):
         _user32.ShowWindow(self._shell.overlay_hwnd, win32con.SW_HIDE)
 
+    def download_models(self):
+        self._shell.models.start()
+
     def copy(self, text: str):
         copy_text(text)
 
@@ -275,6 +287,7 @@ class Shell:
             on_top=True, text_select=True, min_size=(0, 0), transparent=True)
         self.overlay_hwnd = 0
         self.meter = Meter(self.emit)
+        self.models = ModelDownload(self.emit)
         self._metering = False
         self._main_events = _Dispatcher(self.main)
         self._overlay_events = _Dispatcher(self.overlay)
@@ -291,12 +304,11 @@ class Shell:
         self.overlay_hwnd = hwnd
 
     def emit(self, event: str, payload: dict):
-        if self._metering and event in ("level", "meter_error"):
+        metered = self._metering and event in METER_EVENTS
+        if metered or event in MAIN_EVENTS:
             self._main_events.push(event, payload)
-            return
-        self._overlay_events.push(event, payload)
-        if event == "result":
-            self._main_events.push(event, payload)
+        if not metered and event in OVERLAY_EVENTS:
+            self._overlay_events.push(event, payload)
 
     def run(self):
         webview.start(gui="edgechromium")

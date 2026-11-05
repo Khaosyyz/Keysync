@@ -13,6 +13,7 @@ nothing is dropped or duplicated.
 
 UI progress is reported through emit(event, payload):
   recording {} | level {value} | transcribing {} | result {record} | error {code}
+  model_missing {model}  (the hotkey was pressed before the models are installed)
 """
 import queue
 import threading
@@ -29,8 +30,9 @@ from core.output_sink import inject_text
 
 
 class Session:
-    def __init__(self, emit):
+    def __init__(self, emit, models):
         self._emit = emit
+        self._models = models
         self._probe = FocusProbe()
         self._toggle_lock = threading.Lock()
         self._mic = None
@@ -64,6 +66,10 @@ class Session:
             self._toggle_lock.release()
 
     def _begin(self):
+        if not self._models.ready:
+            info("models missing, session not started")
+            self._emit("model_missing", {"model": self._models.snapshot()})
+            return
         self._active = True
         self._probe_result = None
         self._pcm = []

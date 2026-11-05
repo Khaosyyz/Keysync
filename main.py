@@ -13,15 +13,9 @@ def main():
     info("=" * 50)
     info("KeySync starting")
 
-    missing = [str(p) for p in (
-        settings.path("engine.exe"),
-        settings.path("engine.encoder_model"),
-        settings.path("engine.llm_model"),
-        settings.path("engine.vad_model"),
-    ) if not p.exists()]
-    if missing:
-        for m in missing:
-            error(f"missing required file: {m}")
+    engine = settings.path("engine.exe")
+    if not engine.exists():
+        error(f"missing required file: {engine}")
         return 1
 
     from core.hotkey import HotkeyWatcher
@@ -30,7 +24,7 @@ def main():
 
     watcher = HotkeyWatcher(lambda: threading.Thread(target=session.toggle, daemon=True).start())
     shell = Shell(watcher)
-    session = Session(shell.emit)
+    session = Session(shell.emit, shell.models)
     threading.Thread(target=watcher.run, daemon=True).start()
 
     info("KeySync ready")

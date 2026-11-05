@@ -1,4 +1,4 @@
-import { api, applyTheme, errorCode, h, icon, isDark, onSystemScheme, segmented, THEMES, trackFocusMode } from "./shared.js";
+import { api, applyTheme, errorCode, h, icon, isDark, onSystemScheme, percent, segmented, THEMES, trackFocusMode, watchModel } from "./shared.js";
 import { initOnboarding } from "./onboarding.js";
 import { formatDuration, keyLabel, LANGUAGES, locale, setLanguage, t, tNodes, translateStatic } from "./i18n.js";
 
@@ -30,6 +30,7 @@ async function init() {
     bindNav();
     bindComposer();
     bindSettings();
+    bindModel();
     const scroller = $("#page-history .scroll");
     scroller.addEventListener("scroll", () =>
       $(".topbar").classList.toggle("scrolled", scroller.scrollTop > 0), { passive: true });
@@ -101,6 +102,7 @@ function renderText() {
   renderStats();
   renderWords();
   renderChoices();
+  renderModel();
 }
 
 function renderChoices() {
@@ -396,6 +398,34 @@ function bindComposer() {
     input.value = "";
     renderWords(words[0]);
   });
+}
+
+/* ---------- model ----------
+   The rail names the model; while it is not installed the button beside it
+   downloads it, then shows a spinner (checking) and a progress ring. */
+
+const MODEL_TIPS = { missing: "model.download", failed: "model.retry" };
+
+function bindModel() {
+  $("#model-action").addEventListener("click", () => py.download_models());
+  watchModel((next) => {
+    cfg.model = next;
+    renderModel();
+  });
+}
+
+function renderModel() {
+  const { name, state, progress } = cfg.model;
+  const action = $("#model-action");
+  $("#model").dataset.state = state;
+  $("#model-name").textContent = name;
+  $("#model-name").title = name;
+  if (MODEL_TIPS[state]) action.dataset.tip = t(MODEL_TIPS[state]);
+  else delete action.dataset.tip;
+  const ring = action.querySelector(".ring");
+  if (state === "downloading") ring.style.setProperty("--p", progress);
+  else ring.style.removeProperty("--p");
+  action.querySelector(".model-pct").textContent = state === "downloading" ? percent(progress) : "";
 }
 
 /* ---------- settings ---------- */

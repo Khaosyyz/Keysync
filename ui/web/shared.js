@@ -44,6 +44,24 @@ export const errorCode = (err) => (err?.name === "HotwordError" ? err.message : 
 
 export const THEMES = ["system", "light", "dark"];
 
+const CHECK_HOLD_MS = 700;
+
+/* Delivers ks:model snapshots, holding "checking" long enough to be seen. */
+export function watchModel(render) {
+  let since = 0;
+  let latest;
+  let timer;
+  window.addEventListener("ks:model", ({ detail }) => {
+    if (detail.state === "checking" && latest?.state !== "checking") since = performance.now();
+    latest = detail;
+    clearTimeout(timer);
+    const wait = detail.state === "checking" ? 0 : since + CHECK_HOLD_MS - performance.now();
+    timer = setTimeout(() => render(latest), Math.max(0, wait));
+  });
+}
+
+export const percent = (fraction) => `${Math.floor(fraction * 100)}%`;
+
 export function segmented(container, options, active, onPick) {
   container.replaceChildren(...Object.entries(options).map(([value, label]) =>
     h("button", { class: value === active ? "active" : null, onclick: () => value !== active && onPick(value) }, label)));

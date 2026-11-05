@@ -1,4 +1,4 @@
-import { h, icon, segmented, THEMES } from "./shared.js";
+import { h, icon, percent, segmented, THEMES, watchModel } from "./shared.js";
 import { keyLabel, LANGUAGES, t } from "./i18n.js";
 
 const STEPS = ["setup", "try"];
@@ -9,9 +9,11 @@ const ATTACK = 0.6;
 const RELEASE = 0.15;
 const MENU_GAP = 6;
 const MENU_MAX_HEIGHT = 280;
+const STATUS = { missing: "spin", checking: "spin", failed: "fail", downloading: "ok", ready: "ok" };
 
-/* First-run shell. Step "setup" runs the level meter; step "try" leaves the
-   hotkey live so the field can receive a real dictation. */
+/* First-run shell. Step "setup" runs the level meter and, when the models are
+   missing, starts their download; step "try" leaves the hotkey live so the
+   field can receive a real dictation. */
 export function initOnboarding({ py, cfg, save, onFinish }) {
   const $ = (id) => document.getElementById(id);
   const picker = $("mic-picker");
@@ -26,6 +28,8 @@ export function initOnboarding({ py, cfg, save, onFinish }) {
   let smooth = 0;
   let frame = 0;
   let meterCalls = Promise.resolve();
+  let model = cfg.model;
+  let fetched = model.state !== "ready";
 
   /* ---- level meter: bars light up from the left, the first one brightest ---- */
 
@@ -64,6 +68,27 @@ export function initOnboarding({ py, cfg, save, onFinish }) {
     $("ob-error").textContent = t("error.microphone");
     $("ob-error").hidden = false;
   });
+
+  /* ---- model download: shown once the models were found missing ---- */
+
+  function renderModel() {
+    $("ob-model").hidden = !fetched;
+    $("ob-model-status").className = `status ${STATUS[model.state]}`;
+    $("ob-model-failed").hidden = model.state !== "failed";
+    const progress = $("ob-model-progress");
+    progress.hidden = !["downloading", "ready"].includes(model.state);
+    progress.classList.toggle("done", model.state === "ready");
+    $("ob-model-note").textContent = t(model.state === "ready" ? "ob.model.done" : "ob.model.downloading");
+    $("ob-model-pct").textContent = percent(model.state === "ready" ? 1 : model.progress);
+    $("ob-model-bar").style.width = percent(model.state === "ready" ? 1 : model.progress);
+  }
+
+  watchModel((next) => {
+    model = next;
+    fetched ||= model.state !== "ready";
+    renderModel();
+  });
+  $("ob-model-retry").addEventListener("click", () => py.download_models());
 
   /* ---- microphone picker: a listbox positioned against the viewport ---- */
 
@@ -123,6 +148,7 @@ export function initOnboarding({ py, cfg, save, onFinish }) {
     document.querySelectorAll(".ob-page").forEach((page) => (page.hidden = page.dataset.step !== STEPS[step]));
     closeMenu();
     setMetering(STEPS[step] === "setup");
+    if (STEPS[step] === "setup" && model.state === "missing") py.download_models();
     render();
   }
 
@@ -151,6 +177,7 @@ export function initOnboarding({ py, cfg, save, onFinish }) {
       (v) => save("theme", v));
     $("ob-field").placeholder = t("ob.try.placeholder", { key: keyLabel(cfg.hotkey) });
     renderPicker();
+    renderModel();
   }
 
   py.list_mics().then((names) => {

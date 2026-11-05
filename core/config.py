@@ -48,6 +48,19 @@ DEFAULT_CONFIG = {
         "hotword_max_count": 200,
         "hotword_max_length": 10,
     },
+    "models": {
+        "name": "Fun-ASR-Nano",
+        "repos": {
+            "encoder_model": "FunAudioLLM/Fun-ASR-Nano-GGUF",
+            "llm_model": "FunAudioLLM/Fun-ASR-Nano-GGUF",
+            "vad_model": "FunAudioLLM/fsmn-vad-GGUF",
+        },
+        "manifest_url": "https://modelscope.cn/api/v1/models/{repo}/repo/files?Recursive=true",
+        "file_url": "https://modelscope.cn/models/{repo}/resolve/master/{path}",
+        "timeout_s": 30,
+        "chunk_kb": 1024,
+        "progress_interval_ms": 200,
+    },
     "session": {
         "finalize_timeout_s": 10,
         "min_inject_chars": 1,

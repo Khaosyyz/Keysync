@@ -1,4 +1,4 @@
-import { api, h, icon } from "./shared.js";
+import { api, h, icon, percent } from "./shared.js";
 import { setLanguage, t } from "./i18n.js";
 
 const BAR_COUNT = 9;
@@ -19,7 +19,7 @@ const booted = (async () => {
   setLanguage(cfg.language);
 })();
 
-const handlers = { recording, level, transcribing, result, error: failure, config };
+const handlers = { recording, level, transcribing, result, error: failure, config, model_missing: modelMissing };
 for (const [name, handle] of Object.entries(handlers))
   window.addEventListener(`ks:${name}`, async (e) => {
     await booted;
@@ -119,10 +119,22 @@ function result({ record }) {
     h("div", { class: "card-foot" }, h("span", {}, t("overlay.shownHint")), copy)), cfg.result_ms);
 }
 
-function notice(title, sub) {
-  show(h("div", { class: "card notice" },
+function notice(title, sub, alarm = true) {
+  show(h("div", { class: alarm ? "card notice" : "card" },
     h("div", { class: "card-head" }, icon("alert", 16), title, closeBtn()),
     h("p", { class: "card-sub" }, sub)), cfg.notice_ms);
+}
+
+function modelMissing({ model }) {
+  if (["checking", "downloading"].includes(model.state))
+    return notice(t("overlay.modelBusy"), t("overlay.modelBusyHint", { pct: percent(model.progress) }), false);
+  const download = h("button", { class: "btn btn-primary", onclick: () => {
+    py.download_models();
+    hide();
+  } }, icon("download", 14), t("overlay.download"));
+  show(h("div", { class: "card" },
+    h("div", { class: "card-head" }, icon("alert", 16), t("overlay.noModel"), closeBtn()),
+    h("div", { class: "card-foot" }, h("span", {}, t("overlay.noModelHint")), download)), cfg.result_ms);
 }
 
 function failure({ code }) {
