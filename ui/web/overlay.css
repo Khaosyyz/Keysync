@@ -1,0 +1,84 @@
+:root { color-scheme: dark; }
+
+html, body { overflow: hidden; background: transparent; }
+
+.stage { width: max-content; }
+.stage > * { animation: view-in 160ms var(--ease); }
+@keyframes view-in { from { opacity: 0; scale: .96; } }
+
+.pill {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 112px;
+  height: 42px;
+  border-radius: 21px;
+  background: #141416;
+  color: #f2f2f4;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.wave { display: flex; align-items: center; gap: 3px; height: 30px; }
+.wave i {
+  width: 3px;
+  height: 30px;
+  border-radius: 2px;
+  background: #f2f2f4;
+  transform: scaleY(.1);
+  transition: transform 60ms linear;
+}
+
+.sweep {
+  position: absolute;
+  inset: 0;
+  background: rgb(255 255 255 / 10%);
+  transform-origin: left;
+  animation: sweep 1.4s linear infinite;
+}
+@keyframes sweep { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+.card {
+  width: 380px;
+  padding: 14px 14px 14px 16px;
+  border-radius: 14px;
+  background: #1d1d20;
+  color: #f2f2f4;
+}
+.card-head { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+.card-head > .icon { color: #a3a3ad; }
+.card-head .icon-btn { width: 26px; height: 26px; margin-left: auto; }
+.card.notice .card-head > .icon { color: #ff6369; }
+.card-sub { margin: 2px 0 0 24px; color: #a3a3ad; font-size: 12.5px; }
+
+.card-text {
+  max-height: calc(1.7em * 5);
+  margin: 10px 2px 12px 0;
+  overflow-y: auto;
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.card-foot { display: flex; align-items: center; justify-content: space-between; color: #9a9aa2; font-size: 12px; }
+.card .btn-primary.done, .card .btn-primary.done:hover { background: #2ea367; color: #ffffff; }
+
+.card .icon-btn { color: #a3a3ad; }
+.card .icon-btn:hover { background: rgb(255 255 255 / 8%); color: #f2f2f4; }
+.card .icon-btn:active { background: rgb(255 255 255 / 14%); }
+
+.btn-swap { display: inline-grid; place-items: center; }
+.btn-swap .face {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  visibility: hidden;
+}
+.btn-swap .face.on { visibility: visible; }
+
+.card .btn-primary { background: #f2f2f4; color: #17171a; }
+.card .btn-primary:hover:not(.done) { background: #ffffff; }

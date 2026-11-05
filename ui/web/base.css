@@ -1,0 +1,178 @@
+:root {
+  color-scheme: light dark;
+
+  --font: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", system-ui, sans-serif;
+  --font-mono: "Cascadia Mono", Consolas, "Microsoft YaHei UI", monospace;
+
+  --chrome: light-dark(#f3f3f5, #18181b);
+  --surface: light-dark(#ffffff, #1f1f23);
+  --caption: var(--chrome);
+  --raised: light-dark(#ffffff, #26262b);
+  --hover: light-dark(rgb(0 0 0 / 4.5%), rgb(255 255 255 / 6%));
+  --press: light-dark(rgb(0 0 0 / 8%), rgb(255 255 255 / 10%));
+  --line: light-dark(rgb(0 0 0 / 7%), rgb(255 255 255 / 7%));
+  --line-strong: light-dark(rgb(0 0 0 / 12%), rgb(255 255 255 / 13%));
+
+  --text: light-dark(#1c1c1f, #ededf0);
+  --text-2: light-dark(#5e5e66, #a3a3ad);
+  --text-3: light-dark(#9a9aa3, #6c6c76);
+
+  --accent: light-dark(#1c1c1f, #ededf0);
+  --accent-soft: light-dark(rgb(0 0 0 / 6%), rgb(255 255 255 / 9%));
+  --on-accent: light-dark(#ffffff, #1c1c1f);
+  --danger: light-dark(#e5484d, #ff6369);
+  --danger-soft: light-dark(rgb(229 72 77 / 9%), rgb(255 99 105 / 14%));
+  --success: light-dark(#1f9d55, #3dd68c);
+  --recording: #ff4d4f;
+
+  --shadow-sm: 0 1px 2px light-dark(rgb(0 0 0 / 4%), rgb(0 0 0 / 30%));
+  --shadow-md: 0 4px 16px -4px light-dark(rgb(0 0 0 / 10%), rgb(0 0 0 / 50%)), var(--shadow-sm);
+
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --ease-spring: cubic-bezier(.34, 1.4, .64, 1);
+  --fast: 80ms;
+  --base: 160ms;
+  --theme-fade: 280ms;
+}
+
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  font: 14px/1.6 var(--font);
+  color: var(--text);
+  background: var(--chrome);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  cursor: default;
+}
+
+button, input, textarea, select { font: inherit; color: inherit; }
+button { border: 0; background: none; padding: 0; cursor: pointer; }
+[hidden] { display: none !important; }
+.selectable { user-select: text; cursor: text; }
+::selection { background: light-dark(rgb(0 0 0 / 12%), rgb(255 255 255 / 20%)); }
+:focus-visible { outline: none; }
+[data-keyboard] :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 8px;
+  background: var(--line-strong) padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background-color: var(--text-3); }
+
+.icon {
+  display: inline-block;
+  flex: none;
+  width: var(--size, 16px);
+  height: var(--size, 16px);
+  background: currentColor;
+  mask: var(--glyph) center / contain no-repeat;
+}
+.i-add { --glyph: url(icons/add.svg); }
+.i-alert { --glyph: url(icons/alert.svg); }
+.i-check { --glyph: url(icons/check.svg); }
+.i-chevron { --glyph: url(icons/chevron.svg); }
+.i-close { --glyph: url(icons/close.svg); }
+.i-copy { --glyph: url(icons/copy.svg); }
+.i-delete { --glyph: url(icons/delete.svg); }
+.i-edit { --glyph: url(icons/edit.svg); }
+.i-history { --glyph: url(icons/history.svg); }
+.i-mic { --glyph: url(icons/mic.svg); }
+.i-play { --glyph: url(icons/play.svg); }
+.i-rewrite { --glyph: url(icons/rewrite.svg); }
+.i-settings { --glyph: url(icons/settings.svg); }
+.i-stop { --glyph: url(icons/stop.svg); }
+.i-vocab { --glyph: url(icons/vocab.svg); }
+
+.icon-btn {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+.icon-btn:hover { background: var(--hover); color: var(--text); }
+.icon-btn:active { background: var(--press); }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 13px;
+  transition: background var(--fast) var(--ease), transform var(--fast) var(--ease);
+}
+.btn:active { transform: scale(.97); }
+.btn-primary { background: var(--accent); color: var(--on-accent); }
+.btn-primary:hover { background: color-mix(in srgb, var(--accent), var(--surface) 14%); }
+.btn-outline { background: transparent; color: var(--text); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.btn-outline:hover { background: var(--hover); }
+
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  z-index: 10;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  translate: -50% 4px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: light-dark(#1c1c1f, #ededf0);
+  color: light-dark(#ffffff, #1c1c1f);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--fast) var(--ease), translate var(--fast) var(--ease);
+}
+[data-tip]:hover::after {
+  opacity: 1;
+  translate: -50% 0;
+}
+
+@keyframes spin { to { rotate: 1turn; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+/* Colours cross-fade only while a theme switch is in flight (the class is set
+   for --theme-fade); the probe is exempt so the title bar always reads the
+   destination colour. */
+:root.theme-fade *, :root.theme-fade *::before, :root.theme-fade *::after {
+  transition: background-color var(--theme-fade) var(--ease), color var(--theme-fade) var(--ease),
+              border-color var(--theme-fade) var(--ease), box-shadow var(--theme-fade) var(--ease) !important;
+}
+:root.theme-fade .caption-probe { transition: none !important; }
+.caption-probe {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  background: var(--caption);
+}

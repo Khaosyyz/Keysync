@@ -1,0 +1,21 @@
+# build output and packaging artifacts
+dist/
+build/
+KeySync.spec
+
+# model weights
+models/
+*.gguf
+*.bin
+
+# runtime state
+data/
+logs/
+config/config.json
+
+# python
+__pycache__/
+*.py[cod]
+
+# local scratch
+*.log

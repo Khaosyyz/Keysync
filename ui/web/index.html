@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <title>KeySync</title>
+  <link rel="stylesheet" href="base.css">
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="onboarding.css">
+  <script type="module" src="errors.js"></script>
+  <script type="module" src="app.js"></script>
+</head>
+<body data-mode="onboarding">
+  <div class="caption-probe" aria-hidden="true"></div>
+
+  <section class="onboarding">
+    <header class="ob-head">
+      <div class="ob-title">
+        <h1 id="ob-title"></h1>
+        <p id="ob-desc"></p>
+      </div>
+      <nav class="ob-steps" id="ob-steps"></nav>
+      <button class="btn btn-outline ob-action" id="ob-skip" data-i18n="ob.skip"></button>
+    </header>
+
+    <div class="ob-body">
+      <div class="ob-page" data-step="setup">
+        <div class="ob-row">
+          <h3 data-i18n="ob.language"></h3>
+          <div class="segmented" id="ob-language"></div>
+        </div>
+        <div class="ob-row">
+          <h3 data-i18n="ob.theme"></h3>
+          <div class="segmented" id="ob-theme"></div>
+        </div>
+        <div class="ob-row">
+          <h3 data-i18n="ob.mic"></h3>
+          <button type="button" class="picker" id="mic-picker" aria-haspopup="listbox">
+            <span id="mic-name"></span><span class="icon i-chevron" style="--size:14px"></span>
+          </button>
+        </div>
+        <div class="ob-meter" id="ob-meter"></div>
+        <p class="ob-error" id="ob-error" hidden></p>
+      </div>
+
+      <div class="ob-page ob-try" data-step="try" hidden>
+        <p class="ob-sample selectable" data-i18n="ob.sample"></p>
+        <textarea class="ob-field selectable" id="ob-field" spellcheck="false"></textarea>
+      </div>
+    </div>
+
+    <footer class="ob-foot">
+      <button class="btn btn-primary ob-action" id="ob-next"></button>
+    </footer>
+  </section>
+
+  <nav class="rail">
+    <button class="rail-btn" data-page="history"><span class="icon i-history" style="--size:18px"></span><span data-i18n="nav.history"></span></button>
+    <button class="rail-btn" data-page="vocab"><span class="icon i-vocab" style="--size:18px"></span><span data-i18n="nav.vocab"></span></button>
+    <button class="rail-btn bottom" data-page="settings"><span class="icon i-settings" style="--size:18px"></span><span data-i18n="nav.settings"></span></button>
+  </nav>
+
+  <main class="panel">
+    <section class="page" id="page-history" hidden>
+      <header class="topbar">
+        <p class="hint"><span data-i18n="hint.lead"></span> <kbd class="hotkey"></kbd> <span data-i18n="hint.tail"></span></p>
+        <p class="stats" id="stats"></p>
+      </header>
+      <div class="scroll">
+        <div class="column" id="feed"></div>
+      </div>
+    </section>
+
+    <section class="page" id="page-vocab" hidden>
+      <div class="scroll">
+        <div class="column">
+          <header class="page-head">
+            <h1 data-i18n="vocab.title"></h1>
+            <p data-i18n="vocab.desc"></p>
+          </header>
+          <form class="composer" id="composer">
+            <input id="word-input" autocomplete="off" spellcheck="false" data-i18n-placeholder="vocab.placeholder">
+            <span class="counter" id="word-counter"></span>
+            <button class="btn btn-primary" type="submit"><span class="icon i-add" style="--size:14px"></span><span data-i18n="vocab.add"></span></button>
+          </form>
+          <p class="composer-msg" id="composer-msg"></p>
+          <ul class="words" id="words"></ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="page-settings" hidden>
+      <div class="scroll">
+        <div class="column">
+          <header class="page-head">
+            <h1 data-i18n="settings.title"></h1>
+          </header>
+          <div class="settings">
+            <div class="setting">
+              <div>
+                <h3 data-i18n="settings.hotkey"></h3>
+                <p id="hotkey-desc"></p>
+              </div>
+              <button class="key-capture" id="key-capture"></button>
+            </div>
+            <div class="setting">
+              <div>
+                <h3 data-i18n="settings.language"></h3>
+                <p data-i18n="settings.language.desc"></p>
+              </div>
+              <div class="segmented" id="seg-language"></div>
+            </div>
+            <div class="setting">
+              <div>
+                <h3 data-i18n="settings.theme"></h3>
+                <p data-i18n="settings.theme.desc"></p>
+              </div>
+              <div class="segmented" id="seg-theme"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <ul class="picker-menu" id="mic-menu" role="listbox" hidden></ul>
+  <div class="toast" id="toast" role="status"></div>
+</body>
+</html>
