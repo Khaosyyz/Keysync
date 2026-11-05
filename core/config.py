@@ -73,6 +73,7 @@ DEFAULT_CONFIG = {
     "history": {
         "dir": "data",
         "retention_days": 30,
+        "write_chunk_s": 5,
     },
     "onboarding": {
         "completed": False,

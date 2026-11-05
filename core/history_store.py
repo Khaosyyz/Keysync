@@ -44,7 +44,14 @@ def save_record(pcm: bytes, text: str, delivery: str) -> dict:
     rate = int(settings.get("audio.sample_rate"))
     channels = int(settings.get("audio.channels"))
     samples = np.frombuffer(pcm, dtype=np.int16).reshape(-1, channels)
-    sf.write(str(audio), samples, rate)
+
+    # libsndfile's Vorbis writer stack-allocates per write call, sized by the
+    # sample count: one call with a long recording overflows the thread stack
+    # (libsndfile #1093), so writes are bounded to a few seconds each.
+    chunk = int(settings.get("history.write_chunk_s")) * rate
+    with sf.SoundFile(str(audio), mode="w", samplerate=rate, channels=channels) as out:
+        for start in range(0, len(samples), chunk):
+            out.write(samples[start:start + chunk])
 
     meta = {
         "id": entry_id,
