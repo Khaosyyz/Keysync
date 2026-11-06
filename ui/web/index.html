@@ -71,6 +71,7 @@
   <nav class="rail">
     <button class="rail-btn" data-page="history"><span class="icon i-history" style="--size:18px"></span><span data-i18n="nav.history"></span></button>
     <button class="rail-btn" data-page="vocab"><span class="icon i-vocab" style="--size:18px"></span><span data-i18n="nav.vocab"></span></button>
+    <button class="rail-btn" data-page="polish"><span class="icon i-polish" style="--size:18px"></span><span data-i18n="nav.polish"></span></button>
     <div class="model" id="model">
       <span class="model-name" id="model-name"></span>
       <button class="model-action" id="model-action"><i class="ring"></i><span class="model-pct"></span><span class="icon model-glyph"></span></button>
@@ -103,6 +104,77 @@
           </form>
           <p class="composer-msg" id="composer-msg"></p>
           <ul class="words" id="words"></ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="page-polish" hidden>
+      <div class="scroll">
+        <div class="column">
+          <header class="page-head">
+            <h1 data-i18n="polish.title"></h1>
+            <p data-i18n="polish.desc"></p>
+          </header>
+          <div class="settings">
+            <div class="setting">
+              <div>
+                <h3 data-i18n="polish.toggle"></h3>
+                <p data-i18n="polish.toggle.desc"></p>
+              </div>
+              <button class="switch" id="polish-toggle" role="switch" aria-checked="false"></button>
+            </div>
+          </div>
+          <div class="polish-body" id="polish-body">
+            <div class="connect">
+              <div class="crow">
+                <div class="crow-text">
+                  <h3 data-i18n="polish.format"></h3>
+                  <p data-i18n="polish.format.desc"></p>
+                </div>
+                <div class="segmented" id="polish-format"></div>
+              </div>
+              <div class="crow">
+                <div class="crow-text">
+                  <h3 data-i18n="polish.baseurl"></h3>
+                  <p data-i18n="polish.baseurl.desc"></p>
+                </div>
+                <input class="field" id="polish-url" spellcheck="false" autocomplete="off">
+              </div>
+              <div class="crow">
+                <div class="crow-text">
+                  <h3 data-i18n="polish.apikey"></h3>
+                  <p data-i18n="polish.apikey.desc"></p>
+                </div>
+                <input class="field" id="polish-key" type="password" spellcheck="false" autocomplete="off">
+              </div>
+              <div class="crow">
+                <div class="crow-text">
+                  <h3 data-i18n="polish.model"></h3>
+                  <p data-i18n="polish.model.desc"></p>
+                </div>
+                <div class="model-row">
+                  <div class="model-select">
+                    <button class="picker" id="polish-model" aria-haspopup="listbox" aria-expanded="false">
+                      <span id="polish-model-label"></span>
+                      <span class="icon i-chevron"></span>
+                    </button>
+                    <ul class="picker-menu" id="polish-model-menu" role="listbox" hidden></ul>
+                  </div>
+                  <button class="icon-btn" id="polish-add" data-i18n-tip="polish.add"><span class="icon i-add" style="--size:16px"></span></button>
+                  <button class="icon-btn" id="polish-test" data-i18n-tip="polish.test"><span class="icon i-link" style="--size:16px"></span></button>
+                </div>
+              </div>
+            </div>
+            <div class="connect prompt-card">
+              <div class="crow col">
+                <div class="crow-text">
+                  <h3 data-i18n="polish.prompt"></h3>
+                  <p data-i18n="polish.prompt.desc"></p>
+                </div>
+                <textarea class="prompt" id="polish-prompt" spellcheck="false"></textarea>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -142,6 +214,15 @@
   </main>
 
   <ul class="picker-menu" id="mic-menu" role="listbox" hidden></ul>
+  <div class="modal-backdrop" id="polish-modal" hidden>
+    <div class="modal">
+      <h3 data-i18n="polish.modal.title"></h3>
+      <div class="modal-row">
+        <input id="polish-model-name" spellcheck="false" autocomplete="off" data-i18n-placeholder="polish.modal.placeholder">
+        <button class="icon-btn" id="polish-model-save"><span class="icon i-check" style="--size:18px"></span></button>
+      </div>
+    </div>
+  </div>
   <div class="toast" id="toast" role="status"></div>
 </body>
 </html>

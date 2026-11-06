@@ -96,6 +96,8 @@ button { border: 0; background: none; padding: 0; cursor: pointer; }
 .i-settings { --glyph: url(icons/settings.svg); }
 .i-stop { --glyph: url(icons/stop.svg); }
 .i-vocab { --glyph: url(icons/vocab.svg); }
+.i-polish { --glyph: url(icons/polish.svg); }
+.i-link { --glyph: url(icons/link.svg); }
 
 .icon-btn {
   position: relative;

@@ -18,6 +18,22 @@ LOGS_DIR = BASE_DIR / "logs"
 
 CONFIG_FILE = CONFIG_DIR / "config.json"
 
+POLISH_PROMPT = (
+    "Organize the raw speech-to-text transcript according to the following rules:\n"
+    "Rule 1 - Remove meaningless filler words, repetitions, and certain verbal tics; "
+    "retain meaningful sentence-final particles.\n"
+    "Rule 2 - Preserve the original tone and sentence structure: do not alter the emotional tone "
+    "or grammatical form - for example, do not change questions into statements.\n"
+    "Rule 3 - Correct slips of the tongue: disregard the unintended errors and retain only the "
+    "intended, correct text.\n"
+    "Rule 4 - Refine text structure: correct punctuation between words and phrases, and ensure "
+    "proper paragraph breaks.\n"
+    "Rule 5 - Standardize text: format formulas, numbers, dates, etc., using standard Arabic "
+    "numerals and appropriate symbols.\n"
+    "Constraint: Output only the organized text. Maintain the same language as the input; "
+    "translation is strictly prohibited."
+)
+
 DEFAULT_CONFIG = {
     "hotkey": {
         "vk": "AltRight",
@@ -65,6 +81,12 @@ DEFAULT_CONFIG = {
     "polish": {
         "enabled": False,
         "simulate_delay_s": 2.0,
+        "format": "openai",
+        "baseurl": "",
+        "apikey": "",
+        "models": [],
+        "model": "",
+        "prompt": POLISH_PROMPT,
     },
     "session": {
         "finalize_timeout_s": 10,

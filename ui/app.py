@@ -37,6 +37,13 @@ PREFS = {
     "theme": ("ui.theme", ("system", "light", "dark")),
     "language": ("ui.language", ("en", "zh")),
     "hotkey": ("hotkey.vk", tuple(HOTKEY_VK)),
+    "polish_enabled": ("polish.enabled", (True, False)),
+    "polish_format": ("polish.format", ("openai", "gemini", "anthropic")),
+    "polish_baseurl": ("polish.baseurl", None),
+    "polish_apikey": ("polish.apikey", None),
+    "polish_models": ("polish.models", None),
+    "polish_model": ("polish.model", None),
+    "polish_prompt": ("polish.prompt", None),
 }
 
 _user32 = ctypes.WinDLL("user32")
@@ -83,6 +90,11 @@ def _ui_config() -> dict:
     return {key: settings.get(path) for key, (path, _) in PREFS.items()}
 
 
+def _polish_config() -> dict:
+    return {key: settings.get(f"polish.{key}")
+            for key in ("enabled", "format", "baseurl", "apikey", "models", "model", "prompt")}
+
+
 class _Dispatcher:
     """Serialises Python -> JS events; a backlog of meter updates is collapsed."""
 
@@ -123,6 +135,7 @@ class MainApi:
             "history": load_history(),
             "hotwords": load_hotwords(),
             "model": self._shell.models.snapshot(),
+            "polish": _polish_config(),
         }
 
     def log_error(self, message: str):
@@ -136,13 +149,13 @@ class MainApi:
     def set_chrome(self, caption: list[int], dark: bool):
         paint_caption(hwnd_of(self._shell.main), caption, dark)
 
-    def update_setting(self, key: str, value: str):
+    def update_setting(self, key: str, value):
         path, allowed = PREFS[key]
-        if value not in allowed:
+        if allowed is not None and value not in allowed:
             raise ValueError(f"invalid {key}: {value!r}")
         settings.set(path, value)
         info(f"setting {path} = {value}")
-        config = _ui_config()
+        config = {**_ui_config(), "polish": _polish_config()}
         self._shell.emit("config", config)
         return config
 

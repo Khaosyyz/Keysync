@@ -5,7 +5,7 @@ import { formatDuration, keyLabel, LANGUAGES, locale, setLanguage, t, tNodes, tr
 const $ = (sel) => document.querySelector(sel);
 const TOAST_MS = 1800;
 const DISARM_MS = 2500;
-const PAGES = ["history", "vocab", "settings"];
+const PAGES = ["history", "vocab", "polish", "settings"];
 
 let py, cfg, onboarding;
 let records = [];
@@ -30,6 +30,7 @@ async function init() {
     bindNav();
     bindComposer();
     bindSettings();
+    bindPolish();
     bindModel();
     const scroller = $("#page-history .scroll");
     scroller.addEventListener("scroll", () =>
@@ -106,7 +107,113 @@ function renderText() {
 
 function renderChoices() {
   renderSettings();
+  renderPolish();
   onboarding.render();
+}
+
+/* ---------- polish ---------- */
+
+const FORMAT_LABELS = { openai: "OpenAI", gemini: "Gemini", anthropic: "Claude" };
+
+function bindPolish() {
+  $("#polish-toggle").addEventListener("click", () => saveSetting("polish_enabled", !cfg.polish.enabled));
+  const modelBtn = $("#polish-model");
+  const modelMenu = $("#polish-model-menu");
+  const closeModelMenu = () => {
+    modelMenu.hidden = true;
+    modelBtn.setAttribute("aria-expanded", "false");
+  };
+  modelBtn.addEventListener("click", () => {
+    if (!modelMenu.hidden) return closeModelMenu();
+    const rect = modelBtn.getBoundingClientRect();
+    modelMenu.style.width = `${rect.width}px`;
+    modelMenu.style.left = `${rect.left}px`;
+    modelMenu.style.top = `${rect.bottom + 6}px`;
+    modelMenu.style.maxHeight = "240px";
+    const options = cfg.polish.models.map((name) => h("li", {
+      class: "picker-option", role: "option",
+      "aria-selected": String(name === cfg.polish.model),
+      onclick: () => {
+        saveSetting("polish_model", name);
+        closeModelMenu();
+      },
+    }, h("span", {}, name), icon("check", 14)));
+    if (!options.length) options.push(h("li", { class: "picker-option", style: "color: var(--text-3); cursor: default;" },
+                                          t("polish.model.none")));
+    modelMenu.replaceChildren(...options);
+    modelMenu.hidden = false;
+    modelBtn.setAttribute("aria-expanded", "true");
+  });
+  document.addEventListener("pointerdown", (e) => {
+    if (!modelMenu.contains(e.target) && !modelBtn.contains(e.target)) closeModelMenu();
+  }, true);
+  document.addEventListener("keydown", (e) => e.key === "Escape" && closeModelMenu());
+  $("#polish-add").addEventListener("click", openModelModal);
+  $("#polish-model-save").addEventListener("click", saveModelName);
+  $("#polish-model-name").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") saveModelName();
+    if (e.key === "Escape") closeModelModal();
+  });
+  $("#polish-modal").addEventListener("mousedown", (e) => e.target === e.currentTarget && closeModelModal());
+  $("#polish-test").addEventListener("click", testPolish);
+  const debounce = (key, el) => {
+    let timer;
+    el.addEventListener("input", () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => saveSetting(key, el.value), 600);
+    });
+  };
+  debounce("polish_baseurl", $("#polish-url"));
+  debounce("polish_apikey", $("#polish-key"));
+  debounce("polish_prompt", $("#polish-prompt"));
+}
+
+function renderPolish() {
+  $("#polish-toggle").setAttribute("aria-checked", String(!!cfg.polish.enabled));
+  $("#polish-body").classList.toggle("off", !cfg.polish.enabled);
+  segmented($("#polish-format"), FORMAT_LABELS, cfg.polish.format, (v) => saveSetting("polish_format", v));
+  $("#polish-model-label").textContent = cfg.polish.model || t("polish.model.none");
+  $("#polish-model").classList.toggle("placeholder", !cfg.polish.model);
+  for (const [key, id] of [["baseurl", "polish-url"], ["apikey", "polish-key"], ["prompt", "polish-prompt"]]) {
+    const el = document.getElementById(id);
+    if (document.activeElement !== el) el.value = cfg.polish[key];
+  }
+}
+
+function openModelModal() {
+  const input = $("#polish-model-name");
+  input.value = "";
+  $("#polish-modal").hidden = false;
+  input.focus();
+}
+
+function closeModelModal() {
+  $("#polish-modal").hidden = true;
+}
+
+async function saveModelName() {
+  const input = $("#polish-model-name");
+  const name = input.value.trim();
+  if (!name) return closeModelModal();
+  if (!cfg.polish.models.includes(name)) await saveSetting("polish_models", [...cfg.polish.models, name]);
+  await saveSetting("polish_model", name);
+  closeModelModal();
+}
+
+function testPolish() {
+  const button = $("#polish-test");
+  if (button.classList.contains("busy")) return;
+  button.classList.add("busy");
+  button.replaceChildren(h("span", { class: "status spin" }));
+  setTimeout(() => {
+    button.classList.remove("busy");
+    button.classList.add("ok");
+    button.replaceChildren(h("span", { class: "status ok" }));
+    setTimeout(() => {
+      button.classList.remove("ok");
+      button.replaceChildren(h("span", { class: "icon i-link", style: "--size:16px" }));
+    }, 2000);
+  }, 900);
 }
 
 function toast(text, isError = false) {
