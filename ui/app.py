@@ -55,7 +55,7 @@ _user32.ShowWindow.argtypes = [ctypes.c_void_p, ctypes.c_int]
 HWND_TOPMOST = ctypes.c_void_p(-1)
 
 METER_EVENTS = {"level", "meter_error"}
-MAIN_EVENTS = {"result", "model"}
+MAIN_EVENTS = {"result", "model", "polish_test"}
 OVERLAY_EVENTS = {"recording", "level", "transcribing", "polishing", "result", "error", "model_missing", "config"}
 
 
@@ -177,6 +177,14 @@ class MainApi:
 
     def download_models(self):
         return self._shell.models.start()
+
+    def test_polish(self):
+        threading.Thread(target=self._test_polish, daemon=True).start()
+
+    def _test_polish(self):
+        from core.polish import test_connection
+        ok, detail = test_connection()
+        self._shell.emit("polish_test", {"ok": ok, "detail": detail})
 
     def meter_start(self):
         self._shell._metering = True

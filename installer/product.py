@@ -7,8 +7,10 @@ from pathlib import Path
 from win32com.client import Dispatch
 from win32com.shell import shell, shellcon
 
+from core.config import VERSION as APP_VERSION
+
 NAME = "KeySync"
-VERSION = "0.1.0"
+VERSION = APP_VERSION
 PUBLISHER = "KeySync"
 APP_EXE = "KeySync.exe"
 UNINSTALL_EXE = "Uninstall.exe"

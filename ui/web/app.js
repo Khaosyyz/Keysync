@@ -131,13 +131,20 @@ function bindPolish() {
     modelMenu.style.top = `${rect.bottom + 6}px`;
     modelMenu.style.maxHeight = "240px";
     const options = cfg.polish.models.map((name) => h("li", {
-      class: "picker-option", role: "option",
+      class: "picker-option", role: "option", dataset: { model: name },
       "aria-selected": String(name === cfg.polish.model),
       onclick: () => {
         saveSetting("polish_model", name);
         closeModelMenu();
       },
-    }, h("span", {}, name), icon("check", 14)));
+    },
+      h("span", {}, name),
+      h("div", { class: "option-actions" },
+        h("button", { class: "icon-btn", title: t("act.edit"),
+                      onclick: (e) => { e.stopPropagation(); editModel(name); } }, icon("edit", 14)),
+        h("button", { class: "icon-btn", title: t("act.delete"),
+                      onclick: (e) => { e.stopPropagation(); deleteModel(name); } }, icon("delete", 14))),
+      icon("check", 14)));
     if (!options.length) options.push(h("li", { class: "picker-option", style: "color: var(--text-3); cursor: default;" },
                                           t("polish.model.none")));
     modelMenu.replaceChildren(...options);
@@ -156,6 +163,10 @@ function bindPolish() {
   });
   $("#polish-modal").addEventListener("mousedown", (e) => e.target === e.currentTarget && closeModelModal());
   $("#polish-test").addEventListener("click", testPolish);
+  window.addEventListener("ks:polish_test", (e) => {
+    const { ok, detail } = e.detail;
+    setTestState(ok ? "ok" : "fail", detail);
+  });
   const debounce = (key, el) => {
     let timer;
     el.addEventListener("input", () => {
@@ -166,6 +177,41 @@ function bindPolish() {
   debounce("polish_baseurl", $("#polish-url"));
   debounce("polish_apikey", $("#polish-key"));
   debounce("polish_prompt", $("#polish-prompt"));
+
+  function editModel(name) {
+    const li = [...modelMenu.children].find((el) => el.dataset.model === name);
+    const input = h("input", { class: "option-input", value: name, spellcheck: "false" });
+    li.replaceChildren(input);
+    input.focus();
+    input.select();
+    let done = false;
+    const commit = async () => {
+      if (done) return;
+      done = true;
+      const next = input.value.trim();
+      if (next && next !== name) {
+        await saveSetting("polish_models", cfg.polish.models.map((m) => (m === name ? next : m)));
+        if (cfg.polish.model === name) await saveSetting("polish_model", next);
+      }
+      closeModelMenu();
+    };
+    input.addEventListener("keydown", (e) => {
+      e.stopPropagation();
+      if (e.key === "Enter") return commit();
+      if (e.key === "Escape") {
+        done = true;
+        closeModelMenu();
+      }
+    });
+    input.addEventListener("click", (e) => e.stopPropagation());
+    input.addEventListener("blur", commit);
+  }
+
+  async function deleteModel(name) {
+    await saveSetting("polish_models", cfg.polish.models.filter((m) => m !== name));
+    if (cfg.polish.model === name) await saveSetting("polish_model", "");
+    closeModelMenu();
+  }
 }
 
 function renderPolish() {
@@ -200,20 +246,35 @@ async function saveModelName() {
   closeModelModal();
 }
 
-function testPolish() {
+let polishTestTimer;
+
+/* idle(link) -> busy(spinner) -> ok(green check) / fail(red x) -> idle.
+ * Every transition cancels the pending revert, so states can never bleed. */
+function setTestState(state, detail) {
   const button = $("#polish-test");
-  if (button.classList.contains("busy")) return;
-  button.classList.add("busy");
-  button.replaceChildren(h("span", { class: "status spin" }));
-  setTimeout(() => {
-    button.classList.remove("busy");
+  clearTimeout(polishTestTimer);
+  button.classList.remove("busy", "ok", "fail");
+  if (state === "busy") {
+    button.classList.add("busy");
+    button.replaceChildren(h("span", { class: "status spin" }));
+  } else if (state === "ok") {
     button.classList.add("ok");
     button.replaceChildren(h("span", { class: "status ok" }));
-    setTimeout(() => {
-      button.classList.remove("ok");
-      button.replaceChildren(h("span", { class: "icon i-link", style: "--size:16px" }));
-    }, 2000);
-  }, 900);
+    polishTestTimer = setTimeout(() => setTestState("idle"), 3000);
+  } else if (state === "fail") {
+    button.classList.add("fail");
+    button.replaceChildren(h("span", { class: "status fail" }));
+    toast(`${t("polish.fail")}: ${detail}`, true);
+    polishTestTimer = setTimeout(() => setTestState("idle"), 3000);
+  } else {
+    button.replaceChildren(h("span", { class: "icon i-link", style: "--size:16px" }));
+  }
+}
+
+function testPolish() {
+  if ($("#polish-test").classList.contains("busy")) return;
+  setTestState("busy");
+  py.test_polish();
 }
 
 function toast(text, isError = false) {

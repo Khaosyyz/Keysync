@@ -18,6 +18,8 @@ LOGS_DIR = BASE_DIR / "logs"
 
 CONFIG_FILE = CONFIG_DIR / "config.json"
 
+VERSION = "0.1.0"
+
 POLISH_PROMPT = (
     "Organize the raw speech-to-text transcript according to the following rules:\n"
     "Rule 1 - Remove meaningless filler words, repetitions, and certain verbal tics; "
