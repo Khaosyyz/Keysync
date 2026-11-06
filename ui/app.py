@@ -49,7 +49,7 @@ HWND_TOPMOST = ctypes.c_void_p(-1)
 
 METER_EVENTS = {"level", "meter_error"}
 MAIN_EVENTS = {"result", "model"}
-OVERLAY_EVENTS = {"recording", "level", "transcribing", "result", "error", "model_missing", "config"}
+OVERLAY_EVENTS = {"recording", "level", "transcribing", "polishing", "result", "error", "model_missing", "config"}
 
 
 def _work_area() -> tuple[int, int, int, int]:
@@ -212,6 +212,8 @@ class OverlayApi:
             "result_ms": float(settings.get("ui.overlay_result_duration_s")) * 1000,
             "notice_ms": float(settings.get("ui.overlay_notice_duration_s")) * 1000,
             "delivered_ms": float(settings.get("ui.overlay_delivered_duration_s")) * 1000,
+            "load_ms": float(settings.get("ui.overlay_load_s")) * 1000,
+            "polish_ms": float(settings.get("polish.simulate_delay_s")) * 1000,
         }
 
     def fit(self, width: float, height: float, scale: float):

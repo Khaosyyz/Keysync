@@ -62,6 +62,10 @@ DEFAULT_CONFIG = {
         "chunk_kb": 1024,
         "progress_interval_ms": 200,
     },
+    "polish": {
+        "enabled": False,
+        "simulate_delay_s": 2.0,
+    },
     "session": {
         "finalize_timeout_s": 10,
         "min_inject_chars": 1,
@@ -89,6 +93,7 @@ DEFAULT_CONFIG = {
         "overlay_result_duration_s": 12,
         "overlay_notice_duration_s": 4,
         "overlay_delivered_duration_s": 0.5,
+        "overlay_load_s": 2.4,
     },
     "logging": {
         "level": "info",

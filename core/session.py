@@ -26,6 +26,7 @@ from core.meter import level_of
 from core.logger import error, info, warn
 from core.output_probe import FocusProbe
 from core.output_sink import inject_text
+from core.polish import polish
 
 
 class Session:
@@ -175,6 +176,10 @@ class Session:
         engine.shutdown()
         self._engine = None
         info(f"transcript {len(text)} chars, finalize {finalize_s:.2f}s")
+
+        if settings.get("polish.enabled"):
+            self._emit("polishing", {})
+            text = polish(text)
 
         result = self._probe_result
         if len(text) < int(settings.get("session.min_inject_chars")):

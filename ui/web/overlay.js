@@ -11,7 +11,7 @@ const BAR_RANDOM = 0.65;
 
 const stage = document.getElementById("stage");
 let py, cfg;
-let hideTimer, autoHideMs, live;
+let hideTimer, autoHideMs, live, complete;
 
 const booted = (async () => {
   py = await api;
@@ -19,7 +19,7 @@ const booted = (async () => {
   setLanguage(cfg.language);
 })();
 
-const handlers = { recording, level, transcribing, result, error: failure, config, model_missing: modelMissing };
+const handlers = { recording, level, transcribing, polishing, result, error: failure, config, model_missing: modelMissing };
 for (const [name, handle] of Object.entries(handlers))
   window.addEventListener(`ks:${name}`, async (e) => {
     await booted;
@@ -47,6 +47,7 @@ function stopLive() {
 }
 
 function show(view, ms) {
+  complete = null;
   stopLive();
   clearTimeout(hideTimer);
   autoHideMs = null;
@@ -92,13 +93,39 @@ function level({ value }) {
 }
 
 function transcribing() {
-  show(h("div", { class: "pill" }, h("span", {}, t("overlay.transcribing")), h("i", { class: "sweep" })));
+  const bar = h("i");
+  show(h("div", { class: "pill" }, h("span", {}, t("overlay.transcribing")), h("i", { class: "load" }, bar)));
+  const fill = (width, ms) => {
+    bar.style.transitionDuration = `${ms}ms`;
+    bar.style.width = width;
+  };
+  requestAnimationFrame(() => requestAnimationFrame(() => fill("80%", cfg.load_ms)));
+  complete = (after) => {
+    complete = null;
+    fill("100%", 150);
+    setTimeout(after, 170);
+  };
+}
+
+function polishing() {
+  const bar = stage.querySelector(".pill .load i");
+  if (complete && bar && cfg.polish_ms > 0) {
+    bar.style.transitionDuration = `${cfg.polish_ms}ms`;
+    bar.style.width = "96%";
+  }
 }
 
 function result({ record }) {
-  if (record.delivery === "typed") return hide();
-  if (record.delivery === "none") return notice(t("overlay.none"), t("overlay.noneHint"));
+  const settle = () => {
+    if (record.delivery === "typed") return hide();
+    if (record.delivery === "none") return notice(t("overlay.none"), t("overlay.noneHint"));
+    deliver(record);
+  };
+  if (complete) return complete(settle);
+  settle();
+}
 
+function deliver(record) {
   const idleFace = h("span", { class: "face on" }, icon("copy", 14), t("overlay.copy"));
   const doneFace = h("span", { class: "face" }, t("overlay.copied"));
   const copy = h("button", { class: "btn btn-primary btn-swap", onclick: async () => {
@@ -138,6 +165,10 @@ function modelMissing({ model }) {
 }
 
 function failure({ code }) {
-  const key = ["microphone", "engine"].includes(code) ? code : "internal";
-  notice(t(`error.${key}`), t(`error.${key}Hint`));
+  const settle = () => {
+    const key = ["microphone", "engine"].includes(code) ? code : "internal";
+    notice(t(`error.${key}`), t(`error.${key}Hint`));
+  };
+  if (complete) return complete(settle);
+  settle();
 }
