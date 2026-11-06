@@ -1,8 +1,9 @@
 """Cloud post-processing: provider request formats + the polish session stage.
 
-The session stage (polish()) is still a simulated pass; request()/test_connection()
-are the real provider layer the settings page drives, and will replace the
-simulation once the stage is wired to the cloud.
+polish(text) runs AFTER local transcription: the transcript goes out as the user
+message with the configured prompt as the system message, and the response is
+the final text. Any failure (network, auth, quota, empty response) degrades to
+the raw transcript - the user's words are never lost to a polish error.
 
 Wire formats (verified against the official docs):
   openai    POST {base}/chat/completions   Authorization: Bearer <key>
@@ -10,7 +11,6 @@ Wire formats (verified against the official docs):
   anthropic POST {base}/v1/messages   x-api-key: <key>, anthropic-version: 2023-06-01
 """
 import json
-import time
 import urllib.error
 import urllib.request
 from urllib.parse import urlparse
@@ -111,7 +111,20 @@ def test_connection() -> tuple[bool, str]:
 
 
 def polish(text: str) -> str:
-    delay = float(settings.get("polish.simulate_delay_s"))
-    time.sleep(delay)
-    info(f"polish: simulated pass, {delay:.1f}s")
-    return text
+    apikey = settings.get("polish.apikey")
+    model = settings.get("polish.model")
+    if not apikey or not model:
+        warn("polish skipped: api key or model not configured")
+        return text
+    try:
+        result = request(settings.get("polish.format"), settings.get("polish.baseurl"),
+                         apikey, model, settings.get("polish.prompt"), text,
+                         max_tokens=int(settings.get("polish.max_tokens")))
+    except Exception as exc:
+        warn(f"polish failed, delivering raw transcript: {type(exc).__name__}: {exc}")
+        return text
+    if not result:
+        warn("polish returned empty response, delivering raw transcript")
+        return text
+    info(f"polish: {len(text)} -> {len(result)} chars")
+    return result

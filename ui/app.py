@@ -234,7 +234,6 @@ class OverlayApi:
             "notice_ms": float(settings.get("ui.overlay_notice_duration_s")) * 1000,
             "delivered_ms": float(settings.get("ui.overlay_delivered_duration_s")) * 1000,
             "load_ms": float(settings.get("ui.overlay_load_s")) * 1000,
-            "polish_ms": float(settings.get("polish.simulate_delay_s")) * 1000,
         }
 
     def fit(self, width: float, height: float, scale: float):

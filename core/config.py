@@ -82,7 +82,7 @@ DEFAULT_CONFIG = {
     },
     "polish": {
         "enabled": False,
-        "simulate_delay_s": 2.0,
+        "max_tokens": 4096,
         "format": "openai",
         "baseurl": "",
         "apikey": "",

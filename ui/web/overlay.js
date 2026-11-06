@@ -95,8 +95,9 @@ function level({ value }) {
 function transcribing() {
   const sweep = h("i", { class: "sweep" });
   show(h("div", { class: "pill" }, h("span", {}, t("overlay.transcribing")), sweep));
-  const fill = (x, ms) => {
+  const fill = (x, ms, easing) => {
     sweep.style.transitionDuration = `${ms}ms`;
+    sweep.style.transitionTimingFunction = easing || "";
     sweep.style.transform = `scaleX(${x})`;
   };
   requestAnimationFrame(() => requestAnimationFrame(() => fill(.8, cfg.load_ms)));
@@ -107,11 +108,12 @@ function transcribing() {
   };
 }
 
+const CREEP_MS = 15000;
+
 function polishing() {
   const sweep = stage.querySelector(".pill .sweep");
-  if (complete && sweep && cfg.polish_ms > 0) {
-    sweep.style.transitionDuration = `${cfg.polish_ms}ms`;
-    sweep.style.transform = "scaleX(.96)";
+  if (complete && sweep) {
+    fill(sweep, .96, CREEP_MS, "linear");
   }
 }
 
