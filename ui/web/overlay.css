@@ -31,22 +31,13 @@ html, body { overflow: hidden; background: transparent; }
   transition: transform 60ms linear;
 }
 
-.pill .load {
+.sweep {
   position: absolute;
-  left: 14px;
-  right: 14px;
-  bottom: 7px;
-  height: 3px;
-  border-radius: 2px;
-  background: rgb(255 255 255 / 16%);
-}
-.pill .load i {
-  display: block;
-  width: 0;
-  height: 100%;
-  border-radius: inherit;
-  background: #f2f2f4;
-  transition: width 2.4s cubic-bezier(.3, .6, .3, 1);
+  inset: 0;
+  background: rgb(255 255 255 / 10%);
+  transform-origin: left;
+  transform: scaleX(0);
+  transition: transform 2.4s cubic-bezier(.3, .6, .3, 1);
 }
 
 .card {

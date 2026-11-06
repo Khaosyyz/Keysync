@@ -93,25 +93,25 @@ function level({ value }) {
 }
 
 function transcribing() {
-  const bar = h("i");
-  show(h("div", { class: "pill" }, h("span", {}, t("overlay.transcribing")), h("i", { class: "load" }, bar)));
-  const fill = (width, ms) => {
-    bar.style.transitionDuration = `${ms}ms`;
-    bar.style.width = width;
+  const sweep = h("i", { class: "sweep" });
+  show(h("div", { class: "pill" }, h("span", {}, t("overlay.transcribing")), sweep));
+  const fill = (x, ms) => {
+    sweep.style.transitionDuration = `${ms}ms`;
+    sweep.style.transform = `scaleX(${x})`;
   };
-  requestAnimationFrame(() => requestAnimationFrame(() => fill("80%", cfg.load_ms)));
+  requestAnimationFrame(() => requestAnimationFrame(() => fill(.8, cfg.load_ms)));
   complete = (after) => {
     complete = null;
-    fill("100%", 150);
+    fill(1, 150);
     setTimeout(after, 170);
   };
 }
 
 function polishing() {
-  const bar = stage.querySelector(".pill .load i");
-  if (complete && bar && cfg.polish_ms > 0) {
-    bar.style.transitionDuration = `${cfg.polish_ms}ms`;
-    bar.style.width = "96%";
+  const sweep = stage.querySelector(".pill .sweep");
+  if (complete && sweep && cfg.polish_ms > 0) {
+    sweep.style.transitionDuration = `${cfg.polish_ms}ms`;
+    sweep.style.transform = "scaleX(.96)";
   }
 }
 
