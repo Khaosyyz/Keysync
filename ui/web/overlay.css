@@ -34,7 +34,7 @@ html, body { overflow: hidden; background: transparent; }
 .sweep {
   position: absolute;
   inset: 0;
-  background: rgb(255 255 255 / 10%);
+  background: rgb(255 255 255 / 18%);
   transform-origin: left;
   transform: scaleX(0);
   transition: transform 2.4s cubic-bezier(.3, .6, .3, 1);

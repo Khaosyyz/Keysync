@@ -18,6 +18,7 @@ import wave
 from pathlib import Path
 
 import soundfile as sf
+import win32process
 
 from core.config import settings
 from core.hotwords import render_for_engine
@@ -77,7 +78,8 @@ class Engine:
         self._proc = subprocess.Popen(
             cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL, bufsize=0,
-            creationflags=subprocess.CREATE_NO_WINDOW)
+            creationflags=subprocess.CREATE_NO_WINDOW
+            | win32process.BELOW_NORMAL_PRIORITY_CLASS)
         threading.Thread(target=self._read_loop, daemon=True).start()
 
     def wait_ready(self) -> bool:

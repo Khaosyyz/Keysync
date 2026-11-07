@@ -1,13 +1,10 @@
-"""Microphone capture (16 kHz mono s16le) with a hot standby stream.
+"""Microphone capture (16 kHz mono s16le), opened per recording.
 
-Opening a stream makes the device click and costs a few hundred milliseconds,
-so the stream stays open from app start: while idle a reader thread keeps a
-short pre-roll ring, and a hotkey press replays those samples into the session
-and switches the same stream to live capture. Nothing is lost to device
-startup, and the click never lands inside a recording.
+activate() is the first thing the hotkey path does - the engine and the focus
+probe start only after the stream is up, so nothing competes with the open.
+close() ends the stream with the session; between sessions no capture exists.
 """
 import threading
-from collections import deque
 
 import sounddevice as sd
 
@@ -20,38 +17,24 @@ class Microphone:
         self.on_block = None
         self._stream = None
         self._lock = threading.Lock()
-        self._active = False
-        self._pre_roll = None
         self._rate = int(settings.get("audio.sample_rate"))
         self._block = int(settings.get("audio.block_frames"))
         self._channels = int(settings.get("audio.channels"))
-        self._pre_blocks = max(1, round(float(settings.get("audio.pre_roll_s")) * self._rate / self._block))
 
-    def prime(self):
-        """Open the standby stream; activate() retries if no device was ready yet."""
+    def activate(self) -> bool:
+        with self._lock:
+            if self._stream is not None:
+                return True
         try:
-            self._open()
-        except Exception as exc:
-            warn(f"microphone standby unavailable: {type(exc).__name__}: {exc}")
-
-    def activate(self) -> list[bytes] | None:
-        """Standby -> live. Returns the pre-roll (oldest first), or None if no mic."""
-        try:
-            self._open()
+            stream, name = self._open()
         except Exception as exc:
             error(f"microphone open failed: {type(exc).__name__}: {exc}")
-            return None
+            return False
         with self._lock:
-            self._active = True
-            pre = list(self._pre_roll)
-            self._pre_roll.clear()
-            return pre
-
-    def standby(self):
-        with self._lock:
-            self._active = False
-            if self._pre_roll is not None:
-                self._pre_roll.clear()
+            self._stream = stream
+        threading.Thread(target=self._read_loop, args=(stream,), daemon=True).start()
+        info(f"microphone open: {name} @ {self._rate}Hz")
+        return True
 
     def close(self):
         with self._lock:
@@ -65,37 +48,26 @@ class Microphone:
             info("microphone closed")
 
     def _open(self):
-        if self._stream is not None:
-            return
-        device = settings.get("audio.device_name") or None
-        index = self._resolve_device(device)
-        self._stream = sd.InputStream(
+        index = self._resolve_device()
+        name = str(sd.query_devices(index)["name"]).strip()
+        stream = sd.InputStream(
             device=index, channels=self._channels, dtype="int16",
             samplerate=self._rate, blocksize=self._block)
-        self._stream.start()
-        self._pre_roll = deque(maxlen=self._pre_blocks)
-        threading.Thread(target=self._read_loop, daemon=True).start()
-        name = sd.query_devices(index)["name"] if index is not None else sd.query_devices(sd.default.device[0])["name"]
-        info(f"microphone open: {name} @ {self._rate}Hz (standby)")
+        stream.start()
+        return stream, name
 
-    def _read_loop(self):
-        while self._stream is not None:
+    def _read_loop(self, stream):
+        while self._stream is stream:
             try:
-                samples, overflowed = self._stream.read(self._block)
+                samples, overflowed = stream.read(self._block)
             except Exception:
-                with self._lock:
-                    self._stream = None
                 return
             if overflowed:
                 warn("microphone buffer overflow")
-            block = samples.reshape(-1).tobytes()
-            with self._lock:
-                if self._active:
-                    self.on_block(block)
-                else:
-                    self._pre_roll.append(block)
+            self.on_block(samples.reshape(-1).tobytes())
 
-    def _resolve_device(self, name):
+    def _resolve_device(self):
+        name = settings.get("audio.device_name")
         if not name:
             return sd.default.device[0]
         for index, device_name in _input_devices():

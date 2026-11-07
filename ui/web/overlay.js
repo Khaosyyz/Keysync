@@ -92,18 +92,21 @@ function level({ value }) {
     () => gated * (1 - BAR_RANDOM + BAR_RANDOM * Math.random()));
 }
 
+let sweepEl;
+
+function setSweep(x, ms, easing) {
+  sweepEl.style.transitionDuration = `${ms}ms`;
+  sweepEl.style.transitionTimingFunction = easing || "";
+  sweepEl.style.transform = `scaleX(${x})`;
+}
+
 function transcribing() {
-  const sweep = h("i", { class: "sweep" });
-  show(h("div", { class: "pill" }, h("span", {}, t("overlay.transcribing")), sweep));
-  const fill = (x, ms, easing) => {
-    sweep.style.transitionDuration = `${ms}ms`;
-    sweep.style.transitionTimingFunction = easing || "";
-    sweep.style.transform = `scaleX(${x})`;
-  };
-  requestAnimationFrame(() => requestAnimationFrame(() => fill(.8, cfg.load_ms)));
+  sweepEl = h("i", { class: "sweep" });
+  show(h("div", { class: "pill" }, h("span", {}, t("overlay.transcribing")), sweepEl));
+  requestAnimationFrame(() => requestAnimationFrame(() => setSweep(.8, cfg.load_ms)));
   complete = (after) => {
     complete = null;
-    fill(1, 150);
+    setSweep(1, 150);
     setTimeout(after, 170);
   };
 }
@@ -111,10 +114,7 @@ function transcribing() {
 const CREEP_MS = 15000;
 
 function polishing() {
-  const sweep = stage.querySelector(".pill .sweep");
-  if (complete && sweep) {
-    fill(sweep, .96, CREEP_MS, "linear");
-  }
+  if (complete && sweepEl) setSweep(.96, CREEP_MS, "linear");
 }
 
 function result({ record }) {

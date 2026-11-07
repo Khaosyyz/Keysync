@@ -26,7 +26,6 @@ def main():
     watcher = HotkeyWatcher(lambda: threading.Thread(target=session.toggle, daemon=True).start())
     shell = Shell(watcher)
     mic = Microphone()
-    mic.prime()
     session = Session(shell.emit, shell.models, mic)
     threading.Thread(target=watcher.run, daemon=True).start()
 

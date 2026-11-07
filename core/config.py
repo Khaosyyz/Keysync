@@ -40,7 +40,6 @@ DEFAULT_CONFIG = {
     "hotkey": {
         "vk": "AltRight",
         "poll_interval_ms": 20,
-        "release_timeout_ms": 2000,
         "menu_mask_vk": 0xE8,
     },
     "audio": {
@@ -49,7 +48,6 @@ DEFAULT_CONFIG = {
         "block_frames": 800,
         "channels": 1,
         "meter_floor_db": -60,
-        "pre_roll_s": 1.0,
     },
     "engine": {
         "exe": "engine/llama-funasr-cli.exe",
@@ -95,7 +93,6 @@ DEFAULT_CONFIG = {
         "min_inject_chars": 1,
     },
     "output": {
-        "char_delay_ms": 0,
         "probe_settle_ms": 150,
     },
     "history": {

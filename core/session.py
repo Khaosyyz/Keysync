@@ -34,11 +34,11 @@ class Session:
         self._emit = emit
         self._models = models
         self._mic = mic
+        mic.on_block = self._on_block
         self._probe = FocusProbe()
         self._toggle_lock = threading.Lock()
         self._engine = None
         self._active = False
-        self._aborted = False
         self._probe_result = None
         self._pcm = []
 
@@ -73,7 +73,6 @@ class Session:
             self._emit("model_missing", {"model": self._models.snapshot()})
             return
         self._active = True
-        self._aborted = False
         self._probe_result = None
         self._pcm = []
         self._engine = None
@@ -81,23 +80,16 @@ class Session:
         self._boot_done.clear()
         self._feeder_done.clear()
 
-        threading.Thread(target=self._probe_async, daemon=True).start()
-        threading.Thread(target=self._boot_engine, daemon=True).start()
-
-        self._mic.on_block = self._on_block
-        pre = self._mic.activate()
-        if pre is None:
-            self._aborted = True
+        if not self._mic.activate():
             self._active = False
             self._emit("error", {"code": "microphone"})
             return
 
-        now = time.perf_counter()
-        step = float(settings.get("audio.block_frames")) / float(settings.get("audio.sample_rate"))
-        for i, block in enumerate(pre):
-            self._keep((now - (len(pre) - i) * step, block))
         self._emit("recording", {})
-        info(f"session started, {len(pre) * step:.2f}s pre-roll")
+        info("session started")
+
+        threading.Thread(target=self._probe_async, daemon=True).start()
+        threading.Thread(target=self._boot_engine, daemon=True).start()
 
     def _probe_async(self):
         try:
@@ -113,9 +105,6 @@ class Session:
             engine.start()
             if not engine.wait_ready():
                 error("engine failed to become ready")
-                engine.shutdown()
-                return
-            if self._aborted:
                 engine.shutdown()
                 return
             info(f"engine ready in {time.perf_counter() - t0:.2f}s")
@@ -154,7 +143,7 @@ class Session:
 
     def _end(self):
         self._active = False
-        self._mic.standby()
+        self._mic.close()
         info("capture stopped")
         self._emit("transcribing", {})
 

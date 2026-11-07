@@ -20,7 +20,6 @@ class HotkeyWatcher:
     def __init__(self, on_press):
         self._on_press = on_press
         self._interval = float(settings.get("hotkey.poll_interval_ms")) / 1000.0
-        self._release_timeout = float(settings.get("hotkey.release_timeout_ms")) / 1000.0
         self._running = False
         self.suspended = False
 
@@ -33,13 +32,6 @@ class HotkeyWatcher:
         win32api.keybd_event(mask, 0, 0, 0)
         win32api.keybd_event(mask, 0, win32con.KEYEVENTF_KEYUP, 0)
 
-    def _wait_release(self, vk: int):
-        t0 = time.perf_counter()
-        while time.perf_counter() - t0 < self._release_timeout:
-            if not (win32api.GetAsyncKeyState(vk) & 0x8000):
-                return
-            time.sleep(0.01)
-
     def run(self):
         info("hotkey watcher running")
         self._running = True
@@ -51,7 +43,6 @@ class HotkeyWatcher:
                 if settings.get("hotkey.vk") in MENU_KEYS:
                     self._mask_menu()
                 if not self.suspended:
-                    self._wait_release(vk)
                     self._on_press()
             was_pressed = pressed
             time.sleep(self._interval)
