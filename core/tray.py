@@ -82,8 +82,10 @@ class TrayIcon:
             self._add()
         elif msg == self._callback:
             # NOTIFYICON_VERSION_4 layout: LOWORD(lparam) = event, wparam = cursor point.
+            # A left click may arrive as NIN_SELECT or as the raw WM_LBUTTONUP,
+            # depending on how the shell synthesizes it; both open the main window.
             event = lparam & 0xFFFF
-            if event in (NIN_SELECT, NIN_KEYSELECT):
+            if event in (NIN_SELECT, NIN_KEYSELECT, win32con.WM_LBUTTONUP):
                 self._on_select()
             elif event == WM_CONTEXTMENU:
                 self._on_menu(*_xy(wparam))
