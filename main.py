@@ -1,15 +1,36 @@
-"""KeySync entry point: hotkey toggles a session; the shell renders the UI."""
+"""KeySync entry point: hotkey toggles a session; the shell renders the UI.
+
+Background-first: closing the window hides it to the tray; the process lives
+in the tray until Quit is chosen there. A second launch just refuses to start.
+"""
 import sys
 import threading
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from core.config import settings
+import win32api
+import win32event
+import winerror
+
+from core.config import INSTANCE_MUTEX, settings
 from core.logger import error, info
+
+_instance_mutex = None
+
+
+def _single_instance() -> bool:
+    global _instance_mutex
+    _instance_mutex = win32event.CreateMutex(None, False, INSTANCE_MUTEX)
+    if win32api.GetLastError() == winerror.ERROR_ALREADY_EXISTS:
+        win32api.MessageBox(0, "KeySync is already running.", "KeySync")
+        return False
+    return True
 
 
 def main():
+    if not _single_instance():
+        return 1
     info("=" * 50)
     info("KeySync starting")
 

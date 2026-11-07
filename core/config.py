@@ -19,6 +19,8 @@ LOGS_DIR = BASE_DIR / "logs"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 
 VERSION = "0.1.0"
+APP_NAME = "KeySync"
+INSTANCE_MUTEX = r"Local\KeySync.Instance"
 
 POLISH_PROMPT = (
     "Organize the raw speech-to-text transcript according to the following rules:\n"
@@ -115,6 +117,8 @@ DEFAULT_CONFIG = {
         "overlay_notice_duration_s": 4,
         "overlay_delivered_duration_s": 0.5,
         "overlay_load_s": 2.4,
+        "tray_menu_w": 168,
+        "tray_menu_h": 104,
     },
     "logging": {
         "level": "info",

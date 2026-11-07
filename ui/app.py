@@ -12,6 +12,7 @@ import ctypes
 import json
 import queue
 import threading
+import time
 
 import sounddevice as sd
 import soundfile as sf
@@ -20,7 +21,7 @@ import win32api
 import win32con
 import win32gui
 
-from core.config import HOTKEY_VK, RESOURCE_DIR, settings
+from core.config import APP_NAME, HOTKEY_VK, RESOURCE_DIR, settings
 from core.engine import transcribe_file
 from core.history_store import audio_path, delete_record, load_history, update_text
 from core.hotwords import add_hotword, load_hotwords, remove_hotword, update_hotword
@@ -29,6 +30,7 @@ from core.meter import Meter
 from core.microphone import default_input_name, list_input_names
 from core.models import ModelDownload
 from core.output_sink import copy_text
+from core.tray import TrayIcon
 from ui.chrome import hide_caption, hwnd_of, paint_caption
 
 WEB_DIR = RESOURCE_DIR / "ui" / "web"
@@ -223,6 +225,26 @@ class MainApi:
         return remove_hotword(word)
 
 
+class MenuApi:
+    def __init__(self, shell):
+        self._shell = shell
+
+    def bootstrap(self):
+        return {"theme": settings.get("ui.theme"), "language": settings.get("ui.language")}
+
+    def open_main(self):
+        self._shell.open_main()
+
+    def quit(self):
+        self._shell.quit()
+
+    def dismiss(self):
+        self._shell.dismiss_menu()
+
+    def log_error(self, message: str):
+        error(f"menu script: {message}")
+
+
 class OverlayApi:
     def __init__(self, shell):
         self._shell = shell
@@ -272,22 +294,95 @@ class Shell:
             frameless=True, easy_drag=False, resizable=False, hidden=True, shadow=False,
             on_top=True, text_select=True, min_size=(0, 0), transparent=True)
         self.overlay_hwnd = 0
+        self.menu = webview.create_window(
+            f"{APP_NAME} Menu", str(WEB_DIR / "tray.html"), js_api=MenuApi(self),
+            width=int(settings.get("ui.tray_menu_w")),
+            height=int(settings.get("ui.tray_menu_h")),
+            frameless=True, easy_drag=False, resizable=False, hidden=True, shadow=False,
+            on_top=True, text_select=False, min_size=(0, 0), transparent=True)
+        self.menu_hwnd = 0
+        self._tray = None
+        self._quitting = False
         self.meter = Meter(self.emit)
         self.models = ModelDownload(self.emit)
         self._metering = False
         self._main_events = _Dispatcher(self.main)
         self._overlay_events = _Dispatcher(self.overlay)
         self.main.events.closed += self.overlay.destroy
+        self.main.events.closing += self._on_closing
 
     def mount_overlay(self):
         _suppress_background(self.overlay.native)
-        hwnd = hwnd_of(self.overlay)
+        _suppress_background(self.menu.native)
+        self.overlay_hwnd = self._mount_popup(self.overlay)
+        self.menu_hwnd = self._mount_popup(self.menu)
+
+    @staticmethod
+    def _mount_popup(window) -> int:
+        """Frameless popup that never activates: no taskbar button, never steals focus."""
+        hwnd = hwnd_of(window)
         style = _user32.GetWindowLongPtrW(hwnd, win32con.GWL_EXSTYLE)
         _user32.SetWindowLongPtrW(hwnd, win32con.GWL_EXSTYLE,
                                   (style | win32con.WS_EX_TOOLWINDOW | win32con.WS_EX_NOACTIVATE)
                                   & ~win32con.WS_EX_APPWINDOW)
         _user32.ShowWindow(hwnd, win32con.SW_HIDE)
-        self.overlay_hwnd = hwnd
+        return hwnd
+
+    def open_main(self):
+        self.dismiss_menu()
+        self.main.restore()
+        self.main.show()
+
+    def dismiss_menu(self):
+        if self.menu_hwnd:
+            _user32.ShowWindow(self.menu_hwnd, win32con.SW_HIDE)
+
+    def show_menu(self, x: int, y: int):
+        w, h = int(settings.get("ui.tray_menu_w")), int(settings.get("ui.tray_menu_h"))
+        monitor = win32api.MonitorFromPoint((x, y), win32con.MONITOR_DEFAULTTONEAREST)
+        left, top, right, bottom = win32api.GetMonitorInfo(monitor)["Work"]
+        px = min(max(x - w // 2, left), right - w)
+        py = min(max(y - h - 8, top), bottom - h)
+        _user32.SetWindowPos(self.menu_hwnd, HWND_TOPMOST, px, py, w, h,
+                             win32con.SWP_NOACTIVATE | win32con.SWP_NOCOPYBITS)
+        _user32.ShowWindow(self.menu_hwnd, win32con.SW_SHOWNA)
+        threading.Thread(target=self._watch_menu_dismiss, daemon=True).start()
+
+    def _watch_menu_dismiss(self):
+        """Native menu dismissal without focus: a click outside, or Esc, closes it.
+
+        Both the down bit and the pressed-since-last-poll bit count, so even a
+        fast tap between two polls is seen. The opening click's own state is
+        consumed first, or the menu would close the moment it appears.
+        """
+        vks = (win32con.VK_ESCAPE, win32con.VK_LBUTTON, win32con.VK_RBUTTON)
+        for vk in vks:
+            win32api.GetAsyncKeyState(vk)
+        while win32gui.IsWindowVisible(self.menu_hwnd):
+            left, top, right, bottom = win32gui.GetWindowRect(self.menu_hwnd)
+            for vk in vks:
+                state = win32api.GetAsyncKeyState(vk)
+                if state & 0x8000 or state & 0x0001:
+                    x, y = win32gui.GetCursorPos()
+                    if vk == win32con.VK_ESCAPE or not (left <= x < right and top <= y < bottom):
+                        self.dismiss_menu()
+                        return
+            time.sleep(0.03)
+
+    def quit(self):
+        if self._quitting:
+            return
+        self._quitting = True
+        info("quit requested from tray menu")
+        self._tray.destroy()
+        self.menu.destroy()
+        self.main.destroy()
+
+    def _on_closing(self):
+        if not self._quitting:
+            self.main.hide()
+            info("main window hidden to tray")
+            return False
 
     def emit(self, event: str, payload: dict):
         metered = self._metering and event in METER_EVENTS
@@ -297,4 +392,9 @@ class Shell:
             self._overlay_events.push(event, payload)
 
     def run(self):
-        webview.start(gui="edgechromium")
+        self._tray = TrayIcon(on_select=self.open_main, on_menu=self.show_menu)
+        self._tray.start()
+        try:
+            webview.start(gui="edgechromium")
+        finally:
+            self._tray.destroy()

@@ -73,6 +73,7 @@ def render_icon():
 def build_app():
     pyinstaller(product.NAME, ROOT / "main.py",
                 "--add-data", f"{WEB};ui/web",
+                "--add-data", f"{ICON};ui/web",
                 *(f"--hidden-import={h}" for h in HIDDEN_IMPORTS),
                 "--collect-all", "comtypes")
     built = STAGE / product.NAME
